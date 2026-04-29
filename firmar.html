@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firmar Documento</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body style="background-color: var(--bg-color);">
+    <header>
+        <div class="header-content" style="justify-content: center;">
+            <div class="logo">
+                <i class="fa-solid fa-file-signature"></i>
+                <h1>Firma de Documento</h1>
+            </div>
+        </div>
+    </header>
+
+    <main class="container" style="max-width: 800px;">
+        <div id="loadingMessage" style="text-align: center; padding: 2rem;">
+            <i class="fa-solid fa-spinner fa-spin fa-3x" style="color: var(--primary-color);"></i>
+            <p style="margin-top: 1rem; color: var(--text-secondary);">Cargando documento...</p>
+        </div>
+
+        <section class="card" id="documentSection" style="display: none;">
+            <h2><i class="fa-solid fa-file-pdf"></i> Documento a Firmar</h2>
+            <p class="subtitle">Por favor, lea el documento y firme al pie usando su dedo o mouse.</p>
+            
+            <div id="pdfContainer" style="border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; margin-bottom: 2rem; height: 60vh;">
+                <!-- El PDF se renderizará en canvas aquí adentro para compatibilidad móvil -->
+                <div id="pdfViewer" style="width: 100%; height: 100%; overflow-y: auto; background-color: #e2e8f0; padding: 1rem; text-align: center;"></div>
+            </div>
+
+            <h3 style="margin-bottom: 1rem; text-align: left;"><i class="fa-solid fa-pen-to-square"></i> Complete sus datos y firme:</h3>
+            
+            <div style="margin-bottom: 1.5rem; text-align: left; background-color: rgba(59, 130, 246, 0.05); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                <label style="display:flex; align-items:flex-start; gap: 0.75rem; cursor:pointer;">
+                    <input type="checkbox" id="chkConformidad" style="width: 20px; height: 20px; flex-shrink: 0; margin-top: 0.1rem;">
+                    <span style="font-size: 0.95rem; line-height: 1.4;">Estoy consciente de haber leído y comprendido lo que estoy firmando con total conformidad. Asimismo, manifiesto mi acuerdo con su contenido y acepto su validación mediante mi firma digital.</span>
+                </label>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; text-align: left;">
+                <div>
+                    <label for="afiliadoNombre" style="font-weight: 500; font-size: 0.9rem;">Nombre y Apellido</label>
+                    <input type="text" id="afiliadoNombre" placeholder="Ej: Juan Pérez" style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); font-family: inherit; font-size: 1rem; margin-top: 0.25rem;">
+                </div>
+                <div>
+                    <label for="afiliadoDNI" style="font-weight: 500; font-size: 0.9rem;">DNI</label>
+                    <input type="number" id="afiliadoDNI" placeholder="Ej: 12345678" style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); font-family: inherit; font-size: 1rem; margin-top: 0.25rem;">
+                </div>
+            </div>
+
+            <div style="border: 2px dashed var(--border-color); border-radius: 8px; background-color: #fff; margin-bottom: 1rem; touch-action: none;">
+                <canvas id="signaturePad" width="300" height="200" style="width: 100%; height: 200px; cursor: crosshair;"></canvas>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+                <button type="button" class="btn" id="btnClear" style="background-color: #f1f5f9; color: var(--text-primary); border: 1px solid var(--border-color);">
+                    <i class="fa-solid fa-eraser"></i> Limpiar Firma
+                </button>
+                <button type="button" class="btn btn-primary" id="btnDone">
+                    <i class="fa-solid fa-check"></i> HECHO
+                </button>
+            </div>
+
+            <button type="button" class="btn btn-primary" id="btnSubmit" style="width: 100%; display: none; background-color: var(--success-color);">
+                <i class="fa-solid fa-paper-plane"></i> ENVIAR DOCUMENTO FIRMADO
+            </button>
+        </section>
+        
+        <section class="card" id="successSection" style="display: none; text-align: center; padding: 3rem 1rem;">
+            <i class="fa-solid fa-circle-check" style="font-size: 4rem; color: var(--success-color); margin-bottom: 1rem;"></i>
+            <h2>¡Documento Firmado con Éxito!</h2>
+            <p class="subtitle">Muchas gracias. Ya puede cerrar esta ventana.</p>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <p class="credits">Diseñado y Desarrollado en su totalidad por <strong>Matías Gómez</strong></p>
+            <div class="contact-info">
+                <a href="https://wa.me/5492612404479" target="_blank" class="contact-item">
+                    <i class="fa-brands fa-whatsapp"></i> +54 9 2612404479
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Signature Pad SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+    
+    <!-- PDF.js para renderizar PDF en móviles sin que salte el cartel de descargar -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
+    <script src="firmar.js" defer></script>
+</body>
+</html>
