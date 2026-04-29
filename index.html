@@ -26,11 +26,15 @@
     <header>
         <div class="header-content">
             <div class="logo">
-                <i class="fa-solid fa-file-signature"></i>
+                <img id="customLogo" src="" style="display: none; height: 40px; border-radius: 4px; margin-right: 10px;">
+                <i class="fa-solid fa-file-signature" id="defaultLogoIcon"></i>
                 <h1 id="headerTitle">FirmaExpress Pro</h1>
             </div>
             <div style="display: flex; gap: 15px; align-items: center;">
                 <span id="userEmailDisplay" style="font-size: 0.9rem; color: var(--text-secondary); font-weight: 500;"></span>
+                <button id="btnPerfil" class="icon-btn" title="Mi Perfil / Cambiar Clave" style="display: none;" onclick="abrirModalPerfil()">
+                    <i class="fa-solid fa-user-gear"></i>
+                </button>
                 <button id="themeToggle" class="icon-btn" aria-label="Cambiar tema">
                     <i class="fa-solid fa-moon"></i>
                 </button>
@@ -57,7 +61,7 @@
                 <table class="modern-table">
                     <thead>
                         <tr>
-                            <th>Nombre del Estudio/Empresa</th>
+                            <th>Nombre / WhatsApp</th>
                             <th>Email de Acceso</th>
                             <th>Acciones</th>
                         </tr>
@@ -156,25 +160,65 @@
     <!-- ========================================== -->
     <div id="modalEmpresa" class="modal">
         <div class="modal-content card">
-            <h2 style="margin-top: 0; color: var(--primary-color);"><i class="fa-solid fa-building"></i> Dar de Alta Cliente</h2>
-            <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 0.9rem;">Creá el usuario para que el estudio/empresa pueda ingresar a su propio panel privado.</p>
+            <h2 style="margin-top: 0; color: var(--primary-color);" id="modalEmpresaTitle"><i class="fa-solid fa-building"></i> Dar de Alta Cliente</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 0.9rem;" id="modalEmpresaSub">Creá el usuario para que el estudio/empresa pueda ingresar a su propio panel privado.</p>
             
             <form id="formNuevaEmpresa">
+                <input type="hidden" id="editEmpresaId">
                 <div class="form-group-modal">
-                    <label>Nombre Comercial (Ej: Estudio Jurídico López)</label>
-                    <input type="text" id="empNombre" required>
+                    <label>Nombre Comercial</label>
+                    <input type="text" id="empNombre" required placeholder="Ej: Estudio Jurídico López">
                 </div>
                 <div class="form-group-modal">
-                    <label>Email de Acceso para el cliente</label>
+                    <label>WhatsApp de Contacto</label>
+                    <input type="text" id="empWhatsapp" placeholder="Ej: 5492612404479">
+                </div>
+                <div class="form-group-modal">
+                    <label>Email de Acceso</label>
                     <input type="email" id="empEmail" required placeholder="contacto@estudiolopez.com">
                 </div>
-                <div class="form-group-modal">
+                <div class="form-group-modal" id="passGroup">
                     <label>Contraseña Inicial</label>
-                    <input type="text" id="empPassword" required placeholder="Escribile una clave inicial">
+                    <input type="text" id="empPassword" placeholder="Escribile una clave inicial">
+                </div>
+                <div class="form-group-modal">
+                    <label>URL del Logo de la Empresa (Link de imagen)</label>
+                    <input type="url" id="empLogoUrl" placeholder="https://ejemplo.com/logo.png">
+                </div>
+                <div id="editActions" style="display: none; margin-top: 10px; padding: 10px; background: rgba(59, 130, 246, 0.05); border-radius: 8px;">
+                    <p style="font-size: 0.8rem; margin-bottom: 5px;"><strong>Gestión de Claves:</strong></p>
+                    <button type="button" class="btn" style="background: var(--warning-color); color: white; width: 100%; font-size: 0.8rem;" onclick="mandarResetClave()">
+                        <i class="fa-solid fa-envelope-open-text"></i> Enviar Email para Reestablecer Clave
+                    </button>
+                </div>
+                <div style="display: flex; gap: 15px; margin-top: 25px;">
+                    <button type="button" class="btn" style="background: transparent; color: var(--danger-color); border: 1px solid var(--danger-color); flex: 1;" onclick="cerrarModalEmpresa()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" style="flex: 2;" id="btnGuardarEmpresa">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL MI PERFIL (CLIENTE) -->
+    <!-- ========================================== -->
+    <div id="modalPerfil" class="modal">
+        <div class="modal-content card">
+            <h2 style="margin-top: 0; color: var(--primary-color);"><i class="fa-solid fa-user-shield"></i> Mi Perfil</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 0.9rem;">Podés cambiar tu contraseña de acceso aquí.</p>
+            
+            <form id="formCambiarClave">
+                <div class="form-group-modal">
+                    <label>Nueva Contraseña</label>
+                    <input type="password" id="newPassword" required minlength="6" placeholder="Mínimo 6 caracteres">
+                </div>
+                <div class="form-group-modal">
+                    <label>Repetir Nueva Contraseña</label>
+                    <input type="password" id="newPasswordConfirm" required minlength="6">
                 </div>
                 <div style="display: flex; gap: 15px; margin-top: 30px;">
-                    <button type="button" class="btn" style="background: transparent; color: var(--danger-color); border: 1px solid var(--danger-color); flex: 1;" onclick="cerrarModalEmpresa()">Cancelar</button>
-                    <button type="submit" class="btn btn-primary" style="flex: 2;" id="btnGuardarEmpresa">Crear Cliente y Panel</button>
+                    <button type="button" class="btn" style="background: transparent; color: var(--text-secondary); border: 1px solid var(--text-secondary); flex: 1;" onclick="cerrarModalPerfil()">Cerrar</button>
+                    <button type="submit" class="btn btn-primary" style="flex: 2;">Actualizar Contraseña</button>
                 </div>
             </form>
         </div>

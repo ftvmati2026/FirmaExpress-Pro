@@ -95,11 +95,20 @@ function cargarListaEmpresas() {
                    </button>`;
 
             tr.innerHTML = `
-                <td><strong>${data.nombre}</strong> ${!isActiva ? '<span style="color:red; font-size: 0.8rem; margin-left: 5px;">(Suspendida)</span>' : ''}</td>
+                <td>
+                    <strong>${data.nombre}</strong> ${!isActiva ? '<span style="color:red; font-size: 0.8rem; margin-left: 5px;">(Suspendida)</span>' : ''}
+                    <br>
+                    <a href="https://wa.me/${data.whatsapp}" target="_blank" style="font-size: 0.8rem; color: var(--success-color); text-decoration: none;">
+                        <i class="fa-brands fa-whatsapp"></i> ${data.whatsapp || 'Sin WhatsApp'}
+                    </a>
+                </td>
                 <td>${data.email}</td>
-                <td style="display: flex; gap: 10px;">
-                    <button class="btn btn-primary" style="padding: 5px 15px; font-size: 0.9rem;" onclick="entrarComoEmpresa('${doc.id}', '${data.nombre}')">
-                        <i class="fa-solid fa-eye"></i> Entrar al Panel
+                <td style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button class="btn btn-primary" style="padding: 5px 12px; font-size: 0.8rem;" onclick="entrarComoEmpresa('${doc.id}', '${data.nombre}')">
+                        <i class="fa-solid fa-eye"></i> Entrar
+                    </button>
+                    <button class="btn" style="padding: 5px 12px; font-size: 0.8rem; background: var(--text-secondary); color: white;" onclick="abrirModalEmpresa('${doc.id}')">
+                        <i class="fa-solid fa-pen-to-square"></i> Editar
                     </button>
                     ${btnActivarStr}
                 </td>
@@ -122,11 +131,64 @@ window.toggleEstadoEmpresa = async function(id, estadoActual) {
     }
 }
 
-// Lógica del Modal para crear clientes
-window.abrirModalEmpresa = () => document.getElementById('modalEmpresa').style.display = 'flex';
+// Lógica del Modal para crear/editar clientes
+window.abrirModalEmpresa = async (id = null) => {
+    const modal = document.getElementById('modalEmpresa');
+    const form = document.getElementById('formNuevaEmpresa');
+    const title = document.getElementById('modalEmpresaTitle');
+    const sub = document.getElementById('modalEmpresaSub');
+    const passGroup = document.getElementById('passGroup');
+    const editActions = document.getElementById('editActions');
+    const btnGuardar = document.getElementById('btnGuardarEmpresa');
+    
+    form.reset();
+    document.getElementById('editEmpresaId').value = id || '';
+    
+    if (id) {
+        title.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Editar Cliente';
+        sub.innerText = 'Modificá los datos comerciales de este cliente.';
+        passGroup.style.display = 'none'; // No se cambia la clave por acá
+        editActions.style.display = 'block';
+        btnGuardar.textContent = "Guardar Cambios";
+        
+        // Cargar datos
+        const doc = await db.collection('empresas').doc(id).get();
+        if (doc.exists) {
+            const data = doc.data();
+            document.getElementById('empNombre').value = data.nombre || '';
+            document.getElementById('empEmail').value = data.email || '';
+            document.getElementById('empWhatsapp').value = data.whatsapp || '';
+            document.getElementById('empLogoUrl').value = data.logoUrl || '';
+            document.getElementById('empEmail').disabled = true; // El email es el ID de auth, mejor no tocarlo
+        }
+    } else {
+        title.innerHTML = '<i class="fa-solid fa-building"></i> Dar de Alta Cliente';
+        sub.innerText = 'Creá el usuario para que el estudio/empresa pueda ingresar a su propio panel privado.';
+        passGroup.style.display = 'block';
+        editActions.style.display = 'none';
+        document.getElementById('empEmail').disabled = false;
+        btnGuardar.textContent = "Crear Cliente y Panel";
+    }
+    
+    modal.style.display = 'flex';
+}
+
 window.cerrarModalEmpresa = () => {
     document.getElementById('modalEmpresa').style.display = 'none';
     document.getElementById('formNuevaEmpresa').reset();
+}
+
+// Enviar email de reset de clave (para el Super Admin)
+window.mandarResetClave = async () => {
+    const email = document.getElementById('empEmail').value;
+    if (confirm(`¿Querés enviarle un email a ${email} para que reestablezca su contraseña?`)) {
+        try {
+            await auth.sendPasswordResetEmail(email);
+            alert("Email enviado correctamente.");
+        } catch (error) {
+            alert("Error: " + error.message);
+        }
+    }
 }
 
 const formNuevaEmpresa = document.getElementById('formNuevaEmpresa');
@@ -134,48 +196,70 @@ if (formNuevaEmpresa) {
     formNuevaEmpresa.addEventListener('submit', async (e) => {
         e.preventDefault();
         const btnGuardar = document.getElementById('btnGuardarEmpresa');
+        const id = document.getElementById('editEmpresaId').value;
+        
         btnGuardar.disabled = true;
-        btnGuardar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creando Sistema...';
+        btnGuardar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
         
         const nombre = document.getElementById('empNombre').value;
         const email = document.getElementById('empEmail').value;
-        const password = document.getElementById('empPassword').value;
+        const whatsapp = document.getElementById('empWhatsapp').value;
+        const logoUrl = document.getElementById('empLogoUrl').value;
         
         try {
-            // TRUCO AVANZADO: Usar la API pública de Firebase para crear un usuario 
-            // SIN cerrar tu sesión actual de Super Admin.
-            const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${firebaseConfig.apiKey}`, {
-                method: 'POST',
-                body: JSON.stringify({ email, password, returnSecureToken: true }),
-                headers: { 'Content-Type': 'application/json' }
-            });
-            const userData = await res.json();
-            
-            if (userData.error) {
-                alert("Error al crear usuario de cliente: " + userData.error.message);
-                btnGuardar.disabled = false;
-                btnGuardar.textContent = "Crear Cliente y Panel";
-                return;
+            if (id) {
+                // ACTUALIZAR EXISTENTE
+                await db.collection('empresas').doc(id).update({
+                    nombre: nombre,
+                    whatsapp: whatsapp,
+                    logoUrl: logoUrl
+                });
+                alert("Cliente actualizado correctamente.");
+            } else {
+                // CREAR NUEVO
+                const password = document.getElementById('empPassword').value;
+                if (!password) {
+                    alert("Debes asignar una contraseña inicial.");
+                    btnGuardar.disabled = false;
+                    btnGuardar.textContent = "Crear Cliente y Panel";
+                    return;
+                }
+
+                const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${firebaseConfig.apiKey}`, {
+                    method: 'POST',
+                    body: JSON.stringify({ email, password, returnSecureToken: true }),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const userData = await res.json();
+                
+                if (userData.error) {
+                    alert("Error al crear usuario: " + userData.error.message);
+                    btnGuardar.disabled = false;
+                    btnGuardar.textContent = "Crear Cliente y Panel";
+                    return;
+                }
+                
+                const nuevoUid = userData.localId; 
+                
+                await db.collection('empresas').doc(nuevoUid).set({
+                    nombre: nombre,
+                    email: email,
+                    whatsapp: whatsapp,
+                    logoUrl: logoUrl,
+                    activa: true,
+                    fechaCreacion: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                alert(`¡Éxito! El panel para ${nombre} fue creado.`);
             }
             
-            const nuevoUid = userData.localId; 
-            
-            // Guardamos el perfil de la empresa en la base de datos
-            await db.collection('empresas').doc(nuevoUid).set({
-                nombre: nombre,
-                email: email,
-                activa: true,
-                fechaCreacion: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            
-            alert(`¡Éxito! El panel para ${nombre} fue creado.\nYa podés avisarles que ingresen con ${email}.`);
             cerrarModalEmpresa();
         } catch (error) {
             console.error(error);
-            alert("Ocurrió un error de red al crear la empresa.");
+            alert("Ocurrió un error: " + error.message);
         } finally {
             btnGuardar.disabled = false;
-            btnGuardar.textContent = "Crear Cliente y Panel";
+            btnGuardar.textContent = id ? "Guardar Cambios" : "Crear Cliente y Panel";
         }
     });
 }
@@ -216,13 +300,49 @@ function iniciarModoCliente(tenantUid) {
             
             superAdminDashboard.style.display = 'none';
             tenantDashboard.style.display = 'block';
-            btnVolverAdmin.style.display = 'none'; // Los clientes no ven este boton jamas
-            headerTitle.textContent = data.nombre; // Personalizar el panel con su nombre
+            btnVolverAdmin.style.display = 'none'; 
+            btnPerfil.style.display = 'inline-block'; // Mostrar botón de perfil
+            headerTitle.textContent = data.nombre;
+
+            // Logo Personalizado
+            const customLogo = document.getElementById('customLogo');
+            const defaultIcon = document.getElementById('defaultLogoIcon');
+            if (data.logoUrl) {
+                customLogo.src = data.logoUrl;
+                customLogo.style.display = 'block';
+                defaultIcon.style.display = 'none';
+            } else {
+                customLogo.style.display = 'none';
+                defaultIcon.style.display = 'block';
+            }
             
             cargarAuditoriasDeEmpresa();
         }
     }).catch(err => {
         console.error("Error validando empresa:", err);
+    });
+}
+
+// Lógica de Perfil de Cliente
+window.abrirModalPerfil = () => document.getElementById('modalPerfil').style.display = 'flex';
+window.cerrarModalPerfil = () => document.getElementById('modalPerfil').style.display = 'none';
+
+if (document.getElementById('formCambiarClave')) {
+    document.getElementById('formCambiarClave').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const pass = document.getElementById('newPassword').value;
+        const confirm = document.getElementById('newPasswordConfirm').value;
+
+        if (pass !== confirm) return alert("Las contraseñas no coinciden.");
+        
+        try {
+            await auth.currentUser.updatePassword(pass);
+            alert("Contraseña actualizada con éxito.");
+            cerrarModalPerfil();
+            e.target.reset();
+        } catch (error) {
+            alert("Error: " + error.message + "\nSi hace mucho que no inicias sesión, por seguridad cerrá y volvé a entrar antes de cambiar la clave.");
+        }
     });
 }
 
