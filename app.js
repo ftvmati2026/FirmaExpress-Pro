@@ -111,11 +111,25 @@ function cargarListaEmpresas() {
                         <i class="fa-solid fa-pen-to-square"></i> Editar
                     </button>
                     ${btnActivarStr}
+                    <button class="btn" style="padding: 5px 12px; font-size: 0.8rem; background: transparent; color: var(--danger-color); border: 1px solid var(--danger-color);" onclick="eliminarEmpresa('${doc.id}', '${data.nombre}')">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
                 </td>
             `;
             empresasList.appendChild(tr);
         });
     });
+}
+
+window.eliminarEmpresa = async function(id, nombre) {
+    if (confirm(`⚠️ MODO DIOS: ¿Estás ABSOLUTAMENTE seguro de eliminar a "${nombre}"?\n\nEsta acción borrará su perfil y no podrá volver a entrar al sistema.`)) {
+        try {
+            await db.collection('empresas').doc(id).delete();
+            alert("Cuenta eliminada correctamente.");
+        } catch (error) {
+            alert("Error al eliminar: " + error.message);
+        }
+    }
 }
 
 window.toggleEstadoEmpresa = async function(id, estadoActual) {
