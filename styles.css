@@ -27,6 +27,17 @@
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5);
 }
 
+/* Estilos para select y option (asegurar visibilidad en modo oscuro) */
+select, option {
+    background-color: var(--surface-color);
+    color: var(--text-primary);
+}
+
+select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
 * {
     box-sizing: border-box;
     margin: 0;
