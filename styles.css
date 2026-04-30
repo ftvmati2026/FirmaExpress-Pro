@@ -1,5 +1,9 @@
 :root {
-    /* Modo Claro (Día) - Limpio y Profesional */
+    color-scheme: light dark;
+}
+
+/* Modo Claro (Día) - Por defecto o explícito */
+:root, [data-theme="light"] {
     --bg-color: #f8fafc;
     --surface-color: #ffffff;
     --text-primary: #0f172a;
