@@ -605,6 +605,8 @@ window.descargarPDF = async function(id) {
             // Posición Y
             if (pos.startsWith('arriba')) {
                 currentY = height - 100;
+            } else if (pos.startsWith('centro')) {
+                currentY = height / 2;
             } else {
                 // abajo
                 currentY = 150; 
@@ -613,7 +615,7 @@ window.descargarPDF = async function(id) {
             // Posición X
             if (pos.endsWith('derecha')) {
                 startX = width - 210; // 160 (firma) + 50 (margen)
-            } else if (pos.endsWith('centro')) {
+            } else if (pos.endsWith('centro') || pos === 'centro') {
                 startX = (width - 160) / 2;
             } else {
                 startX = 50; // izquierda
