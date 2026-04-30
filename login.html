@@ -25,8 +25,13 @@
             border: 1px solid var(--border-color);
             border-radius: var(--border-radius);
             font-family: inherit;
-            background-color: var(--card-bg);
+            background-color: var(--surface-color);
             color: var(--text-primary);
+        }
+        .theme-toggle-login {
+            position: absolute;
+            top: 20px;
+            right: 20px;
         }
         .login-form input:focus {
             outline: none;
@@ -36,6 +41,11 @@
     </style>
 </head>
 <body>
+    <div class="theme-toggle-login">
+        <button id="themeToggle" class="icon-btn" aria-label="Cambiar tema">
+            <i class="fa-solid fa-moon"></i>
+        </button>
+    </div>
     <main class="container login-container">
         <div class="card">
             <div class="logo" style="justify-content: center; margin-bottom: 20px;">

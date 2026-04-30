@@ -2,36 +2,36 @@
     color-scheme: light dark;
 }
 
-/* Modo Claro (Día) - Por defecto o explícito */
+/* MODO CLARO (ASOCIADO A LA LUNA SEGÚN TU PEDIDO) */
 :root, [data-theme="light"] {
-    --bg-color: #f8fafc;
-    --surface-color: #ffffff;
-    --text-primary: #0f172a;
-    --text-secondary: #475569;
-    --primary-color: #2563eb;
-    --primary-hover: #1d4ed8;
-    --success-color: #10b981;
-    --danger-color: #ef4444;
-    --warning-color: #f59e0b;
-    --border-color: #e2e8f0;
-    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    --bg-color: #ffffff !important;
+    --surface-color: #f8fafc !important;
+    --text-primary: #000000 !important;
+    --text-secondary: #475569 !important;
+    --primary-color: #2563eb !important;
+    --primary-hover: #1d4ed8 !important;
+    --success-color: #10b981 !important;
+    --danger-color: #ef4444 !important;
+    --warning-color: #f59e0b !important;
+    --border-color: #e2e8f0 !important;
+    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1) !important;
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1) !important;
     --border-radius: 12px;
-    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition: all 0.25s ease;
 }
 
+/* MODO OSCURO (ASOCIADO AL SOL SEGÚN TU PEDIDO) - NEGRO PURO, SIN AZUL */
 [data-theme="dark"] {
-    /* Modo Oscuro (Noche) - Elegante y Premium */
-    --bg-color: #0f172a;
-    --surface-color: #1e293b;
-    --text-primary: #f1f5f9;
-    --text-secondary: #94a3b8;
-    --primary-color: #3b82f6;
-    --primary-hover: #60a5fa;
-    --border-color: #334155;
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5);
+    --bg-color: #000000 !important;
+    --surface-color: #121212 !important;
+    --text-primary: #ffffff !important;
+    --text-secondary: #a1a1aa !important;
+    --primary-color: #3b82f6 !important;
+    --primary-hover: #60a5fa !important;
+    --border-color: #27272a !important;
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.8) !important;
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.9) !important;
 }
 
 /* Estilos para select y option (asegurar visibilidad en modo oscuro) */
