@@ -1,30 +1,33 @@
 :root {
-    color-scheme: light dark;
+    color-scheme: only light; /* Avisa al navegador que no fuerce modo oscuro */
 }
 
-/* MODO CLARO (ASOCIADO A LA LUNA SEGÚN TU PEDIDO) */
-:root, [data-theme="light"] {
+/* MODO CLARO (LUNA) - BLANCO ABSOLUTO FORZADO */
+html[data-theme="light"], 
+body[data-theme="light"],
+[data-theme="light"] :root {
     --bg-color: #ffffff !important;
-    --surface-color: #f8fafc !important;
+    --surface-color: #ffffff !important;
     --text-primary: #000000 !important;
-    --text-secondary: #475569 !important;
+    --text-secondary: #334155 !important;
     --primary-color: #2563eb !important;
     --primary-hover: #1d4ed8 !important;
     --success-color: #10b981 !important;
     --danger-color: #ef4444 !important;
     --warning-color: #f59e0b !important;
-    --border-color: #e2e8f0 !important;
+    --border-color: #cbd5e1 !important;
     --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1) !important;
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1) !important;
-    --border-radius: 12px;
-    --transition: all 0.25s ease;
+    background-color: #ffffff !important;
+    color: #000000 !important;
 }
 
-/* MODO OSCURO (ASOCIADO AL SOL SEGÚN TU PEDIDO) - NEGRO PURO, SIN AZUL */
-[data-theme="dark"] {
+/* MODO OSCURO (SOL) - NEGRO CARBÓN PURO */
+html[data-theme="dark"],
+body[data-theme="dark"] {
     --bg-color: #000000 !important;
-    --surface-color: #121212 !important;
+    --surface-color: #0a0a0a !important;
     --text-primary: #ffffff !important;
     --text-secondary: #a1a1aa !important;
     --primary-color: #3b82f6 !important;
@@ -32,6 +35,8 @@
     --border-color: #27272a !important;
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.8) !important;
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.9) !important;
+    background-color: #000000 !important;
+    color: #ffffff !important;
 }
 
 /* Estilos para select y option (asegurar visibilidad en modo oscuro) */
