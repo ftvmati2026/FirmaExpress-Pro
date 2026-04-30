@@ -740,10 +740,12 @@ window.descargarPDF = async function(id) {
 // ----------------------------------------------------
 const themeToggle = document.getElementById('themeToggle');
 const body = document.body;
+const html = document.documentElement;
 const savedTheme = localStorage.getItem('theme') || 'light';
 
 // Aplicar el tema guardado al iniciar
 body.setAttribute('data-theme', savedTheme);
+html.setAttribute('data-theme', savedTheme);
 actualizarIconoTema(savedTheme);
 
 if(themeToggle){
@@ -752,6 +754,7 @@ if(themeToggle){
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
         
         body.setAttribute('data-theme', newTheme);
+        html.setAttribute('data-theme', newTheme);
         localStorage.setItem('theme', newTheme);
         actualizarIconoTema(newTheme);
     });
