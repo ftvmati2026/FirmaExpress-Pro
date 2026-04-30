@@ -32,11 +32,13 @@ body[data-theme="dark"] {
     --text-secondary: #a1a1aa !important;
     --primary-color: #3b82f6 !important;
     --primary-hover: #60a5fa !important;
+    --success-color: #10b981 !important;
+    --danger-color: #ef4444 !important;
+    --warning-color: #f59e0b !important;
     --border-color: #27272a !important;
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.8) !important;
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.9) !important;
     background-color: #000000 !important;
-    color: #ffffff !important;
 }
 
 /* Estilos para select y option (asegurar visibilidad en modo oscuro) */
