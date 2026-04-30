@@ -174,6 +174,14 @@ window.abrirModalEmpresa = async (id = null) => {
             document.getElementById('empWhatsapp').value = data.whatsapp || '';
             document.getElementById('empLogoUrl').value = data.logoUrl || '';
             document.getElementById('empEmail').disabled = true; // El email es el ID de auth, mejor no tocarlo
+            
+            // Mostrar preview si ya tiene logo
+            if (data.logoUrl) {
+                document.getElementById('logoPreview').src = data.logoUrl;
+                document.getElementById('logoPreviewContainer').style.display = 'block';
+            } else {
+                document.getElementById('logoPreviewContainer').style.display = 'none';
+            }
         }
     } else {
         title.innerHTML = '<i class="fa-solid fa-building"></i> Dar de Alta Cliente';
@@ -190,7 +198,34 @@ window.abrirModalEmpresa = async (id = null) => {
 window.cerrarModalEmpresa = () => {
     document.getElementById('modalEmpresa').style.display = 'none';
     document.getElementById('formNuevaEmpresa').reset();
+    document.getElementById('logoPreview').src = '';
+    document.getElementById('logoPreviewContainer').style.display = 'none';
 }
+
+// Manejo de carga de logo local
+const empLogoFile = document.getElementById('empLogoFile');
+if (empLogoFile) {
+    empLogoFile.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            try {
+                const base64 = await fileToBase64(file);
+                document.getElementById('logoPreview').src = base64;
+                document.getElementById('logoPreviewContainer').style.display = 'block';
+                document.getElementById('empLogoUrl').value = ''; // Limpiamos URL si sube archivo
+            } catch (error) {
+                alert("Error al cargar la imagen");
+            }
+        }
+    });
+}
+
+window.quitarLogoPreview = () => {
+    document.getElementById('logoPreview').src = '';
+    document.getElementById('logoPreviewContainer').style.display = 'none';
+    document.getElementById('empLogoFile').value = '';
+    document.getElementById('empLogoUrl').value = '';
+};
 
 // Enviar email de reset de clave (para el Super Admin)
 window.mandarResetClave = async () => {
@@ -218,7 +253,15 @@ if (formNuevaEmpresa) {
         const nombre = document.getElementById('empNombre').value;
         const email = document.getElementById('empEmail').value;
         const whatsapp = document.getElementById('empWhatsapp').value;
-        const logoUrl = document.getElementById('empLogoUrl').value;
+        
+        // Lógica de Logo: Prioridad al archivo subido (Base64) o URL manual
+        let logoUrl = document.getElementById('empLogoUrl').value;
+        const previewSrc = document.getElementById('logoPreview').src;
+        
+        // Si el preview tiene un Base64 o la URL manual está vacía pero hay preview, usamos el preview
+        if (previewSrc && (previewSrc.startsWith('data:') || !logoUrl)) {
+            logoUrl = previewSrc;
+        }
         
         try {
             if (id) {
