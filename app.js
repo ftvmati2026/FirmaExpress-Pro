@@ -352,13 +352,18 @@ window.volverAlAdmin = () => {
 // Función mágica para Marca Blanca
 function aplicarColorCorporativo(color) {
     if(!color) return;
+    // Aplicamos a ambos para asegurar que sobreescriba cualquier regla del CSS
     document.documentElement.style.setProperty('--primary-color', color, 'important');
     document.documentElement.style.setProperty('--primary-hover', ajustarBrillo(color, -20), 'important');
+    document.body.style.setProperty('--primary-color', color, 'important');
+    document.body.style.setProperty('--primary-hover', ajustarBrillo(color, -20), 'important');
 }
 
 function restaurarColorOriginal() {
     document.documentElement.style.removeProperty('--primary-color');
     document.documentElement.style.removeProperty('--primary-hover');
+    document.body.style.removeProperty('--primary-color');
+    document.body.style.removeProperty('--primary-hover');
 }
 
 // Función auxiliar para oscurecer el color del botón al pasar el mouse
