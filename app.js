@@ -173,6 +173,7 @@ window.abrirModalEmpresa = async (id = null) => {
             document.getElementById('empEmail').value = data.email || '';
             document.getElementById('empWhatsapp').value = data.whatsapp || '';
             document.getElementById('empLogoUrl').value = data.logoUrl || '';
+            document.getElementById('empColor').value = data.color || '#2563eb'; // Color por defecto si no tiene
             document.getElementById('empEmail').disabled = true; // El email es el ID de auth, mejor no tocarlo
             
             // Mostrar preview si ya tiene logo
@@ -253,6 +254,7 @@ if (formNuevaEmpresa) {
         const nombre = document.getElementById('empNombre').value;
         const email = document.getElementById('empEmail').value;
         const whatsapp = document.getElementById('empWhatsapp').value;
+        const color = document.getElementById('empColor').value;
         
         // Lógica de Logo: Prioridad al archivo subido (Base64) o URL manual
         let logoUrl = document.getElementById('empLogoUrl').value;
@@ -269,7 +271,8 @@ if (formNuevaEmpresa) {
                 await db.collection('empresas').doc(id).update({
                     nombre: nombre,
                     whatsapp: whatsapp,
-                    logoUrl: logoUrl
+                    logoUrl: logoUrl,
+                    color: color
                 });
                 alert("Cliente actualizado correctamente.");
             } else {
@@ -303,6 +306,7 @@ if (formNuevaEmpresa) {
                     email: email,
                     whatsapp: whatsapp,
                     logoUrl: logoUrl,
+                    color: color,
                     activa: true,
                     fechaCreacion: firebase.firestore.FieldValue.serverTimestamp()
                 });
@@ -322,20 +326,49 @@ if (formNuevaEmpresa) {
 }
 
 // MODO DIOS: Vos entrando al panel de un cliente para auditar o subir algo por ellos
-window.entrarComoEmpresa = (empresaId, nombreEmpresa) => {
+window.entrarComoEmpresa = async (empresaId, nombreEmpresa) => {
     currentTenantId = empresaId;
     superAdminDashboard.style.display = 'none';
     tenantDashboard.style.display = 'block';
     
     btnVolverAdmin.style.display = 'inline-block';
     headerTitle.textContent = `Gestionando: ${nombreEmpresa}`;
+
+    // Aplicar color de empresa si existe
+    const doc = await db.collection('empresas').doc(empresaId).get();
+    if(doc.exists && doc.data().color) {
+        aplicarColorCorporativo(doc.data().color);
+    }
     
     cargarAuditoriasDeEmpresa();
 }
 
 window.volverAlAdmin = () => {
     if(listenerAuditorias) listenerAuditorias(); // Apagar la escucha de base de datos del cliente
+    restaurarColorOriginal();
     iniciarModoSuperAdmin();
+}
+
+// Función mágica para Marca Blanca
+function aplicarColorCorporativo(color) {
+    if(!color) return;
+    document.documentElement.style.setProperty('--primary-color', color, 'important');
+    document.documentElement.style.setProperty('--primary-hover', ajustarBrillo(color, -20), 'important');
+}
+
+function restaurarColorOriginal() {
+    document.documentElement.style.removeProperty('--primary-color');
+    document.documentElement.style.removeProperty('--primary-hover');
+}
+
+// Función auxiliar para oscurecer el color del botón al pasar el mouse
+function ajustarBrillo(hex, percent) {
+    const num = parseInt(hex.replace("#",""),16),
+    amt = Math.round(2.55 * percent),
+    R = (num >> 16) + amt,
+    G = (num >> 8 & 0x00FF) + amt,
+    B = (num & 0x0000FF) + amt;
+    return "#" + (0x1000000 + (R<255?R<0?0:R:255)*0x10000 + (G<255?G<0?0:G:255)*0x100 + (B<255?B<0?0:B:255)).toString(16).slice(1);
 }
 
 
@@ -360,6 +393,11 @@ function iniciarModoCliente(tenantUid) {
             btnVolverAdmin.style.display = 'none'; 
             btnPerfil.style.display = 'inline-block'; // Mostrar botón de perfil
             headerTitle.textContent = data.nombre;
+
+            // Marca Blanca: Color
+            if (data.color) {
+                aplicarColorCorporativo(data.color);
+            }
 
             // Logo Personalizado
             const customLogo = document.getElementById('customLogo');
