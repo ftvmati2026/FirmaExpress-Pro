@@ -173,7 +173,16 @@ window.abrirModalEmpresa = async (id = null) => {
             document.getElementById('empEmail').value = data.email || '';
             document.getElementById('empWhatsapp').value = data.whatsapp || '';
             document.getElementById('empLogoUrl').value = data.logoUrl || '';
+            document.getElementById('empColor').value = data.color || '#2563eb'; // Color por defecto si no tiene
             document.getElementById('empEmail').disabled = true; // El email es el ID de auth, mejor no tocarlo
+            
+            // Mostrar preview si ya tiene logo
+            if (data.logoUrl) {
+                document.getElementById('logoPreview').src = data.logoUrl;
+                document.getElementById('logoPreviewContainer').style.display = 'block';
+            } else {
+                document.getElementById('logoPreviewContainer').style.display = 'none';
+            }
         }
     } else {
         title.innerHTML = '<i class="fa-solid fa-building"></i> Dar de Alta Cliente';
@@ -190,7 +199,34 @@ window.abrirModalEmpresa = async (id = null) => {
 window.cerrarModalEmpresa = () => {
     document.getElementById('modalEmpresa').style.display = 'none';
     document.getElementById('formNuevaEmpresa').reset();
+    document.getElementById('logoPreview').src = '';
+    document.getElementById('logoPreviewContainer').style.display = 'none';
 }
+
+// Manejo de carga de logo local
+const empLogoFile = document.getElementById('empLogoFile');
+if (empLogoFile) {
+    empLogoFile.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            try {
+                const base64 = await fileToBase64(file);
+                document.getElementById('logoPreview').src = base64;
+                document.getElementById('logoPreviewContainer').style.display = 'block';
+                document.getElementById('empLogoUrl').value = ''; // Limpiamos URL si sube archivo
+            } catch (error) {
+                alert("Error al cargar la imagen");
+            }
+        }
+    });
+}
+
+window.quitarLogoPreview = () => {
+    document.getElementById('logoPreview').src = '';
+    document.getElementById('logoPreviewContainer').style.display = 'none';
+    document.getElementById('empLogoFile').value = '';
+    document.getElementById('empLogoUrl').value = '';
+};
 
 // Enviar email de reset de clave (para el Super Admin)
 window.mandarResetClave = async () => {
@@ -218,7 +254,16 @@ if (formNuevaEmpresa) {
         const nombre = document.getElementById('empNombre').value;
         const email = document.getElementById('empEmail').value;
         const whatsapp = document.getElementById('empWhatsapp').value;
-        const logoUrl = document.getElementById('empLogoUrl').value;
+        const color = document.getElementById('empColor').value;
+        
+        // Lógica de Logo: Prioridad al archivo subido (Base64) o URL manual
+        let logoUrl = document.getElementById('empLogoUrl').value;
+        const previewSrc = document.getElementById('logoPreview').src;
+        
+        // Si el preview tiene un Base64 o la URL manual está vacía pero hay preview, usamos el preview
+        if (previewSrc && (previewSrc.startsWith('data:') || !logoUrl)) {
+            logoUrl = previewSrc;
+        }
         
         try {
             if (id) {
@@ -226,7 +271,8 @@ if (formNuevaEmpresa) {
                 await db.collection('empresas').doc(id).update({
                     nombre: nombre,
                     whatsapp: whatsapp,
-                    logoUrl: logoUrl
+                    logoUrl: logoUrl,
+                    color: color
                 });
                 alert("Cliente actualizado correctamente.");
             } else {
@@ -260,6 +306,7 @@ if (formNuevaEmpresa) {
                     email: email,
                     whatsapp: whatsapp,
                     logoUrl: logoUrl,
+                    color: color,
                     activa: true,
                     fechaCreacion: firebase.firestore.FieldValue.serverTimestamp()
                 });
@@ -279,20 +326,54 @@ if (formNuevaEmpresa) {
 }
 
 // MODO DIOS: Vos entrando al panel de un cliente para auditar o subir algo por ellos
-window.entrarComoEmpresa = (empresaId, nombreEmpresa) => {
+window.entrarComoEmpresa = async (empresaId, nombreEmpresa) => {
     currentTenantId = empresaId;
     superAdminDashboard.style.display = 'none';
     tenantDashboard.style.display = 'block';
     
     btnVolverAdmin.style.display = 'inline-block';
     headerTitle.textContent = `Gestionando: ${nombreEmpresa}`;
+
+    // Aplicar color de empresa si existe
+    const doc = await db.collection('empresas').doc(empresaId).get();
+    if(doc.exists && doc.data().color) {
+        aplicarColorCorporativo(doc.data().color);
+    }
     
     cargarAuditoriasDeEmpresa();
 }
 
 window.volverAlAdmin = () => {
     if(listenerAuditorias) listenerAuditorias(); // Apagar la escucha de base de datos del cliente
+    restaurarColorOriginal();
     iniciarModoSuperAdmin();
+}
+
+// Función mágica para Marca Blanca
+function aplicarColorCorporativo(color) {
+    if(!color) return;
+    // Aplicamos a ambos para asegurar que sobreescriba cualquier regla del CSS
+    document.documentElement.style.setProperty('--primary-color', color, 'important');
+    document.documentElement.style.setProperty('--primary-hover', ajustarBrillo(color, -20), 'important');
+    document.body.style.setProperty('--primary-color', color, 'important');
+    document.body.style.setProperty('--primary-hover', ajustarBrillo(color, -20), 'important');
+}
+
+function restaurarColorOriginal() {
+    document.documentElement.style.removeProperty('--primary-color');
+    document.documentElement.style.removeProperty('--primary-hover');
+    document.body.style.removeProperty('--primary-color');
+    document.body.style.removeProperty('--primary-hover');
+}
+
+// Función auxiliar para oscurecer el color del botón al pasar el mouse
+function ajustarBrillo(hex, percent) {
+    const num = parseInt(hex.replace("#",""),16),
+    amt = Math.round(2.55 * percent),
+    R = (num >> 16) + amt,
+    G = (num >> 8 & 0x00FF) + amt,
+    B = (num & 0x0000FF) + amt;
+    return "#" + (0x1000000 + (R<255?R<0?0:R:255)*0x10000 + (G<255?G<0?0:G:255)*0x100 + (B<255?B<0?0:B:255)).toString(16).slice(1);
 }
 
 
@@ -317,6 +398,11 @@ function iniciarModoCliente(tenantUid) {
             btnVolverAdmin.style.display = 'none'; 
             btnPerfil.style.display = 'inline-block'; // Mostrar botón de perfil
             headerTitle.textContent = data.nombre;
+
+            // Marca Blanca: Color
+            if (data.color) {
+                aplicarColorCorporativo(data.color);
+            }
 
             // Logo Personalizado
             const customLogo = document.getElementById('customLogo');
@@ -605,6 +691,8 @@ window.descargarPDF = async function(id) {
             // Posición Y
             if (pos.startsWith('arriba')) {
                 currentY = height - 100;
+            } else if (pos.startsWith('centro')) {
+                currentY = height / 2;
             } else {
                 // abajo
                 currentY = 150; 
@@ -613,7 +701,7 @@ window.descargarPDF = async function(id) {
             // Posición X
             if (pos.endsWith('derecha')) {
                 startX = width - 210; // 160 (firma) + 50 (margen)
-            } else if (pos.endsWith('centro')) {
+            } else if (pos.endsWith('centro') || pos === 'centro') {
                 startX = (width - 160) / 2;
             } else {
                 startX = 50; // izquierda
@@ -695,21 +783,31 @@ window.descargarPDF = async function(id) {
 // ----------------------------------------------------
 const themeToggle = document.getElementById('themeToggle');
 const body = document.body;
+const html = document.documentElement;
 const savedTheme = localStorage.getItem('theme') || 'light';
-if (savedTheme === 'dark') {
-    body.setAttribute('data-theme', 'dark');
-    if(themeToggle) themeToggle.innerHTML = '<i class="fa-solid fa-sun"></i>';
-}
+
+// Aplicar el tema guardado al iniciar
+body.setAttribute('data-theme', savedTheme);
+html.setAttribute('data-theme', savedTheme);
+actualizarIconoTema(savedTheme);
+
 if(themeToggle){
     themeToggle.addEventListener('click', () => {
-        if (body.getAttribute('data-theme') === 'dark') {
-            body.removeAttribute('data-theme');
-            localStorage.setItem('theme', 'light');
-            themeToggle.innerHTML = '<i class="fa-solid fa-moon"></i>';
-        } else {
-            body.setAttribute('data-theme', 'dark');
-            localStorage.setItem('theme', 'dark');
-            themeToggle.innerHTML = '<i class="fa-solid fa-sun"></i>';
-        }
+        const currentTheme = body.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        
+        body.setAttribute('data-theme', newTheme);
+        html.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        actualizarIconoTema(newTheme);
     });
+}
+
+function actualizarIconoTema(theme) {
+    if(!themeToggle) return;
+    if (theme === 'dark') {
+        themeToggle.innerHTML = '<i class="fa-solid fa-sun"></i>';
+    } else {
+        themeToggle.innerHTML = '<i class="fa-solid fa-moon"></i>';
+    }
 }

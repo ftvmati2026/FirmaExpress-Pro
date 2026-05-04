@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar Sesión - FirmaExpress Pro</title>
+    <meta name="darkreader-lock"> <!-- Bloquea extensiones como Dark Reader -->
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Iconos -->
@@ -25,8 +26,13 @@
             border: 1px solid var(--border-color);
             border-radius: var(--border-radius);
             font-family: inherit;
-            background-color: var(--card-bg);
+            background-color: var(--surface-color);
             color: var(--text-primary);
+        }
+        .theme-toggle-login {
+            position: absolute;
+            top: 20px;
+            right: 20px;
         }
         .login-form input:focus {
             outline: none;
@@ -36,6 +42,11 @@
     </style>
 </head>
 <body>
+    <div class="theme-toggle-login">
+        <button id="themeToggle" class="icon-btn" aria-label="Cambiar tema">
+            <i class="fa-solid fa-moon"></i>
+        </button>
+    </div>
     <main class="container login-container">
         <div class="card">
             <div class="logo" style="justify-content: center; margin-bottom: 20px;">

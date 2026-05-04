@@ -52,3 +52,35 @@ auth.onAuthStateChanged((user) => {
         window.location.href = 'index.html';
     }
 });
+
+// Lógica de Temas (Sol/Luna)
+const themeToggle = document.getElementById('themeToggle');
+const body = document.body;
+const html = document.documentElement;
+const savedTheme = localStorage.getItem('theme') || 'light';
+
+// Aplicar el tema guardado al iniciar
+body.setAttribute('data-theme', savedTheme);
+html.setAttribute('data-theme', savedTheme);
+actualizarIconoTema(savedTheme);
+
+if(themeToggle){
+    themeToggle.addEventListener('click', () => {
+        const currentTheme = body.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        
+        body.setAttribute('data-theme', newTheme);
+        html.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        actualizarIconoTema(newTheme);
+    });
+}
+
+function actualizarIconoTema(theme) {
+    if(!themeToggle) return;
+    if (theme === 'dark') {
+        themeToggle.innerHTML = '<i class="fa-solid fa-sun"></i>';
+    } else {
+        themeToggle.innerHTML = '<i class="fa-solid fa-moon"></i>';
+    }
+}
