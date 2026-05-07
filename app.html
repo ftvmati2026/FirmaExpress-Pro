@@ -4,23 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Control - FirmaExpress Pro</title>
-    <meta name="darkreader-lock"> <!-- Bloquea extensiones como Dark Reader -->
+    <meta name="darkreader-lock">
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Estilos para el Modal y Selectores */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); padding: 20px; }
         .modal-content { background: var(--surface-color); padding: 30px; border-radius: var(--border-radius); width: 90%; max-width: 500px; box-shadow: var(--shadow-lg); max-height: 90vh; overflow-y: auto; position: relative; }
         .form-group-modal { margin-bottom: 15px; }
         .form-group-modal label { display: block; margin-bottom: 5px; font-weight: 500; color: var(--text-primary); }
         .form-group-modal input, .form-group-modal select { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-primary); font-family: inherit; }
         .flex-between { display: flex; justify-content: space-between; align-items: center; }
-        
         .radio-group { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
         .radio-option { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; transition: all 0.2s; }
         .radio-option:hover { border-color: var(--primary-color); background: rgba(37, 99, 235, 0.05); }
-        .radio-option input[type="radio"] { accent-color: var(--primary-color); transform: scale(1.2); }
     </style>
 </head>
 <body>
@@ -33,28 +30,22 @@
             </div>
             <div style="display: flex; gap: 15px; align-items: center;">
                 <span id="userEmailDisplay" style="font-size: 0.9rem; color: var(--text-secondary); font-weight: 500;"></span>
-                <button id="btnPerfil" class="icon-btn" title="Mi Perfil / Cambiar Clave" style="display: none;" onclick="abrirModalPerfil()">
+                <button id="btnPerfil" class="icon-btn" title="Mi Perfil" style="display: none;" onclick="abrirModalPerfil()">
                     <i class="fa-solid fa-user-gear"></i>
                 </button>
-<<<<<<< HEAD
-=======
-                <button id="btnDownloadPDF" class="icon-btn" title="Descargar PDF" style="display: none;" onclick="descargarUltimoPDF()">
+                <button id="btnDownloadPDF" class="icon-btn" title="Descargar Último PDF" style="display: none;" onclick="descargarUltimoPDF()">
                     <i class="fa-solid fa-file-arrow-down"></i>
                 </button>
->>>>>>> 92671b0e2a1a6709cedaa5dc763651313168a11a
                 <button id="themeToggle" class="icon-btn" aria-label="Cambiar tema">
                     <i class="fa-solid fa-moon"></i>
                 </button>
-                <button id="btnLogout" class="icon-btn" aria-label="Cerrar sesión" title="Cerrar sesión" style="color: var(--danger-color);">
+                <button id="btnLogout" class="icon-btn" title="Cerrar sesión" style="color: var(--danger-color);">
                     <i class="fa-solid fa-arrow-right-from-bracket"></i>
                 </button>
             </div>
         </div>
     </header>
 
-    <!-- ========================================== -->
-    <!-- DASHBOARD SUPER ADMIN (Solo visible para Matías) -->
-    <!-- ========================================== -->
     <main class="container" id="superAdminDashboard" style="display: none;">
         <section class="card">
             <div class="flex-between" style="margin-bottom: 25px;">
@@ -63,258 +54,96 @@
                     <i class="fa-solid fa-plus"></i> Registrar Empresa
                 </button>
             </div>
-            
             <div class="table-container">
                 <table class="modern-table">
                     <thead>
-                        <tr>
-                            <th>Nombre / WhatsApp</th>
-                            <th>Email de Acceso</th>
-                            <th>Acciones</th>
-                        </tr>
+                        <tr><th>Empresa</th><th>Email</th><th>Acciones</th></tr>
                     </thead>
-                    <tbody id="empresasList">
-                        <!-- Generado por JS -->
-                    </tbody>
+                    <tbody id="empresasList"></tbody>
                 </table>
             </div>
         </section>
     </main>
 
-
-    <!-- ========================================== -->
-    <!-- DASHBOARD CLIENTE / TENANT -->
-    <!-- ========================================== -->
     <main class="container" id="tenantDashboard" style="display: none;">
-        
-        <!-- Botón Volver (solo le aparece a Matías cuando entra a revisar un cliente) -->
         <button id="btnVolverAdmin" class="btn" style="display: none; margin-bottom: 20px; background-color: var(--text-secondary); color: white;" onclick="volverAlAdmin()">
-            <i class="fa-solid fa-arrow-left"></i> Volver a mi panel de administrador
+            <i class="fa-solid fa-arrow-left"></i> Volver al Panel Admin
         </button>
 
         <section class="card upload-section">
             <h2><i class="fa-solid fa-cloud-arrow-up"></i> Enviar Documento a Firmar</h2>
-<<<<<<< HEAD
-            <p class="subtitle">Subí el PDF original y elegí cómo querés que se aplique la firma digital.</p>
-=======
-            <p class="subtitle">Subí el PDF original y elegí cómo querés que se aplique la firma electrónica.</p>
->>>>>>> 92671b0e2a1a6709cedaa5dc763651313168a11a
-            
+            <p class="subtitle">Subí el PDF original y elegí el modo de firma.</p>
             <form id="uploadForm" class="upload-form">
                 <div class="form-group file-upload-wrapper">
                     <input type="file" id="pdfFile" accept="application/pdf" class="file-input" required>
                     <div class="file-upload-design">
                         <i class="fa-regular fa-file-pdf"></i>
-                        <span id="fileNameDisplay">Hacé clic para seleccionar el PDF</span>
+                        <span id="fileNameDisplay">Seleccionar PDF</span>
                     </div>
                 </div>
-
-                <!-- SELECTOR DE MODO DE FIRMA -->
-                <div style="margin-top: 25px; margin-bottom: 25px; text-align: left; background: var(--bg-color); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
-                    <label style="font-weight: 600; font-size: 1.1rem; color: var(--text-primary); display:block; margin-bottom: 10px;">
-                        <i class="fa-solid fa-pen-nib"></i> Ubicación de la Firma en este PDF:
+                <div class="radio-group" style="background: var(--bg-color); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); margin: 20px 0;">
+                    <label class="radio-option">
+                        <input type="radio" name="modoFirma" value="misma_hoja" checked>
+                        <span><strong>Misma Hoja:</strong> Firma en la última página.</span>
                     </label>
-                    <div class="radio-group">
-                        <label class="radio-option" style="flex-direction: column; align-items: flex-start;">
-                            <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
-                                <input type="radio" name="modoFirma" value="misma_hoja" checked onchange="document.getElementById('posicionFirmaContainer').style.display='block'"> 
-                                <span><strong>Misma Hoja:</strong> Estampar firma chiquita en la última hoja del documento original.</span>
-                            </div>
-                            <div id="posicionFirmaContainer" style="margin-left: 28px; margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.02); border-radius: 8px; width: calc(100% - 28px);">
-                                <label style="font-size: 0.9rem; color: var(--text-secondary); display: block; margin-bottom: 5px;"><i class="fa-solid fa-arrows-to-dot"></i> Seleccione la ubicación de la firma en la hoja:</label>
-                                <select id="posicionFirma" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--surface-color); color: var(--text-primary); font-family: inherit; margin-top: 5px;">
-                                    <option value="abajo_izquierda">Abajo a la Izquierda</option>
-                                    <option value="abajo_centro">Abajo en el Centro</option>
-                                    <option value="abajo_derecha">Abajo a la Derecha</option>
-                                    <option value="centro_izquierda">Centro a la Izquierda</option>
-                                    <option value="centro">En el Centro</option>
-                                    <option value="centro_derecha">Centro a la Derecha</option>
-                                    <option value="arriba_izquierda">Arriba a la Izquierda</option>
-                                    <option value="arriba_centro">Arriba en el Centro</option>
-                                    <option value="arriba_derecha">Arriba a la Derecha</option>
-                                </select>
-                            </div>
-                        </label>
-                        <label class="radio-option">
-<<<<<<< HEAD
-=======
-                            <input type="radio" name="modoFirma" value="todas_las_hojas" onchange="document.getElementById('posicionFirmaContainer').style.display='block'"> 
-                            <span><strong>Todas las Hojas:</strong> Estampar la firma en la misma posición en todas las páginas del PDF.</span>
-                        </label>
-                        <label class="radio-option">
->>>>>>> 92671b0e2a1a6709cedaa5dc763651313168a11a
-                            <input type="radio" name="modoFirma" value="hoja_nueva" onchange="document.getElementById('posicionFirmaContainer').style.display='none'"> 
-                            <span><strong>Hoja Anexa:</strong> Agregar una nueva hoja legal al final exclusiva para firmas (Ideal documentos largos).</span>
-                        </label>
+                    <label class="radio-option">
+                        <input type="radio" name="modoFirma" value="hoja_nueva">
+                        <span><strong>Hoja Anexa:</strong> Nueva página legal al final.</span>
+                    </label>
+                    <div id="posicionFirmaContainer" style="margin-top: 10px;">
+                        <label style="font-size: 0.8rem; color: var(--text-secondary);">Posición de firma:</label>
+                        <select id="posicionFirma">
+                            <option value="abajo_derecha">Abajo Derecha</option>
+                            <option value="abajo_centro">Abajo Centro</option>
+                            <option value="abajo_izquierda">Abajo Izquierda</option>
+                        </select>
                     </div>
                 </div>
-
                 <button type="submit" class="btn btn-primary" id="btnUpload" disabled>
-                    <i class="fa-solid fa-link"></i> Generar Link Único para el Cliente
+                    <i class="fa-solid fa-link"></i> Generar Link para Cliente
                 </button>
             </form>
         </section>
 
         <section class="card list-section">
-<<<<<<< HEAD
             <h2 style="color: var(--primary-color);"><i class="fa-solid fa-clock-rotate-left"></i> Documentos Pendientes <span id="pendingCounter" class="counter-badge" style="display: none;">0</span></h2>
-=======
-            <div class="flex-between" style="margin-bottom: 15px;">
-                <h2><i class="fa-solid fa-file-signature"></i> Documentos Pendientes <span id="pendingCounter" class="counter-badge" style="display: none;">0</span></h2>
-            </div>
->>>>>>> 92671b0e2a1a6709cedaa5dc763651313168a11a
             <div class="table-container">
                 <table class="modern-table">
-                    <thead>
-                        <tr>
-<<<<<<< HEAD
-                            <th>ARCHIVO PDF</th>
-                            <th>ESTADO / INFO</th>
-                            <th>ACCIONES</th>
-=======
-                            <th>Archivo PDF</th>
-                            <th>Estado / Info</th>
-                            <th>Acciones</th>
->>>>>>> 92671b0e2a1a6709cedaa5dc763651313168a11a
-                        </tr>
-                    </thead>
-                    <tbody id="auditsList">
-                        <!-- Generado por JS -->
-<<<<<<< HEAD
-=======
-                        <tr class="empty-state">
-                            <td colspan="3">Cargando documentos...</td>
-                        </tr>
->>>>>>> 92671b0e2a1a6709cedaa5dc763651313168a11a
-                    </tbody>
+                    <thead><tr><th>Archivo</th><th>Estado</th><th>Acciones</th></tr></thead>
+                    <tbody id="auditsList"></tbody>
                 </table>
             </div>
         </section>
 
-<<<<<<< HEAD
         <section class="card list-section" style="margin-top: 30px;">
             <h2 style="color: var(--success-color);"><i class="fa-solid fa-history"></i> Historial de Documentos Firmados</h2>
             <div class="table-container">
                 <table class="modern-table">
-                    <thead>
-                        <tr>
-                            <th>ARCHIVO PDF</th>
-                            <th>FECHA FIRMA</th>
-                            <th>FIRMANTE</th>
-                            <th>ACCIONES</th>
-=======
-        <section class="card list-section">
-            <h2><i class="fa-solid fa-clock-rotate-left"></i> Historial de Documentos Firmados <span id="historyCounter" class="counter-badge" style="display: none;">0</span></h2>
-            <div class="table-container">
-                <table class="modern-table" id="historyTable">
-                    <thead>
-                        <tr>
-                            <th>Archivo PDF</th>
-                            <th>Fecha Firma</th>
-                            <th>Firmante</th>
-                            <th>Acciones</th>
->>>>>>> 92671b0e2a1a6709cedaa5dc763651313168a11a
-                        </tr>
-                    </thead>
-                    <tbody id="historyList">
-                        <!-- Generado por JS -->
-<<<<<<< HEAD
-                        <tr class="empty-state"><td colspan="4">No hay documentos firmados todavía.</td></tr>
-=======
->>>>>>> 92671b0e2a1a6709cedaa5dc763651313168a11a
-                    </tbody>
+                    <thead><tr><th>Archivo</th><th>Fecha</th><th>Firmante</th><th>Acciones</th></tr></thead>
+                    <tbody id="historyList"></tbody>
                 </table>
             </div>
         </section>
     </main>
 
-
-    <!-- ========================================== -->
-    <!-- MODAL NUEVA EMPRESA -->
-    <!-- ========================================== -->
+    <!-- Modales (Empresa, Perfil) -->
     <div id="modalEmpresa" class="modal">
-        <div class="modal-content card">
-            <h2 style="margin-top: 0; color: var(--primary-color);" id="modalEmpresaTitle"><i class="fa-solid fa-building"></i> Dar de Alta Cliente</h2>
-            <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 0.9rem;" id="modalEmpresaSub">Creá el usuario para que el estudio/empresa pueda ingresar a su propio panel privado.</p>
-            
+        <div class="modal-content">
+            <h2 id="modalEmpresaTitle">Empresa</h2>
             <form id="formNuevaEmpresa">
                 <input type="hidden" id="editEmpresaId">
-                <div class="form-group-modal">
-                    <label>Nombre Comercial</label>
-                    <input type="text" id="empNombre" required placeholder="Ej: Estudio Jurídico López">
+                <div class="form-group-modal"><label>Nombre</label><input type="text" id="empNombre" required></div>
+                <div class="form-group-modal"><label>WhatsApp</label><input type="text" id="empWhatsapp"></div>
+                <div class="form-group-modal"><label>Email</label><input type="email" id="empEmail" required></div>
+                <div class="form-group-modal" id="passGroup"><label>Clave</label><input type="password" id="empPassword"></div>
+                <div class="form-group-modal"><label>Logo URL</label><input type="url" id="empLogoUrl"></div>
+                <div class="form-group-modal"><label>Color</label><input type="color" id="empColor" value="#2563eb"></div>
+                <div id="editActions" style="display: none; margin-bottom: 15px;">
+                    <button type="button" class="btn" style="background: var(--warning-color); color: white; width: 100%;">Reestablecer Clave</button>
                 </div>
-                <div class="form-group-modal">
-                    <label>WhatsApp de Contacto</label>
-                    <input type="text" id="empWhatsapp" placeholder="Ej: 5492612404479">
-                </div>
-                <div class="form-group-modal">
-                    <label>Email de Acceso</label>
-                    <input type="email" id="empEmail" required placeholder="contacto@estudiolopez.com">
-                </div>
-                <div class="form-group-modal" id="passGroup">
-                    <label>Contraseña Inicial</label>
-                    <input type="text" id="empPassword" placeholder="Escribile una clave inicial">
-                </div>
-                <div class="form-group-modal">
-                    <label>Logo de la Empresa (URL o Subir Archivo)</label>
-                    <div style="display: flex; flex-direction: column; gap: 10px;">
-                        <input type="url" id="empLogoUrl" placeholder="Pegar link de imagen aquí...">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <label for="empLogoFile" class="btn" style="background: var(--text-secondary); color: white; cursor: pointer; font-size: 0.8rem; margin: 0; flex: 1; text-align: center; padding: 8px;">
-                                <i class="fa-solid fa-upload"></i> Seleccionar Imagen de PC
-                            </label>
-                            <input type="file" id="empLogoFile" accept="image/*" style="display: none;">
-                        </div>
-                        <div id="logoPreviewContainer" style="display: none; text-align: center; margin-top: 5px; padding: 10px; border: 1px dashed var(--border-color); border-radius: 8px;">
-                            <p style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 5px;">Vista previa del logo:</p>
-                            <img id="logoPreview" src="" style="max-height: 60px; max-width: 100%; border-radius: 4px;">
-                            <button type="button" class="btn" style="background: var(--danger-color); color: white; padding: 2px 8px; font-size: 0.7rem; margin-top: 5px; display: block; margin-left: auto; margin-right: auto;" onclick="quitarLogoPreview()">
-                                <i class="fa-solid fa-trash"></i> Quitar
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div class="form-group-modal">
-                    <label>Color Corporativo (Marca Blanca)</label>
-                    <div style="display: flex; align-items: center; gap: 15px; background: var(--bg-color); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">
-                        <input type="color" id="empColor" value="#2563eb" style="width: 50px; height: 40px; border: none; background: none; cursor: pointer;">
-                        <span style="font-size: 0.85rem; color: var(--text-secondary);">Elegí el color principal del panel para este cliente.</span>
-                    </div>
-                </div>
-                <div id="editActions" style="display: none; margin-top: 10px; padding: 10px; background: rgba(59, 130, 246, 0.05); border-radius: 8px;">
-                    <p style="font-size: 0.8rem; margin-bottom: 5px;"><strong>Gestión de Claves:</strong></p>
-                    <button type="button" class="btn" style="background: var(--warning-color); color: white; width: 100%; font-size: 0.8rem;" onclick="mandarResetClave()">
-                        <i class="fa-solid fa-envelope-open-text"></i> Enviar Email para Reestablecer Clave
-                    </button>
-                </div>
-                <div style="display: flex; gap: 15px; margin-top: 25px;">
-                    <button type="button" class="btn" style="background: transparent; color: var(--danger-color); border: 1px solid var(--danger-color); flex: 1;" onclick="cerrarModalEmpresa()">Cancelar</button>
-                    <button type="submit" class="btn btn-primary" style="flex: 2;" id="btnGuardarEmpresa">Guardar Cambios</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- ========================================== -->
-    <!-- MODAL MI PERFIL (CLIENTE) -->
-    <!-- ========================================== -->
-    <div id="modalPerfil" class="modal">
-        <div class="modal-content card">
-            <h2 style="margin-top: 0; color: var(--primary-color);"><i class="fa-solid fa-user-shield"></i> Mi Perfil</h2>
-            <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 0.9rem;">Podés cambiar tu contraseña de acceso aquí.</p>
-            
-            <form id="formCambiarClave">
-                <div class="form-group-modal">
-                    <label>Nueva Contraseña</label>
-                    <input type="password" id="newPassword" required minlength="6" placeholder="Mínimo 6 caracteres">
-                </div>
-                <div class="form-group-modal">
-                    <label>Repetir Nueva Contraseña</label>
-                    <input type="password" id="newPasswordConfirm" required minlength="6">
-                </div>
-                <div style="display: flex; gap: 15px; margin-top: 30px;">
-                    <button type="button" class="btn" style="background: transparent; color: var(--text-secondary); border: 1px solid var(--text-secondary); flex: 1;" onclick="cerrarModalPerfil()">Cerrar</button>
-                    <button type="submit" class="btn btn-primary" style="flex: 2;">Actualizar Contraseña</button>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="btn" style="flex:1" onclick="cerrarModalEmpresa()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" style="flex:2">Guardar</button>
                 </div>
             </form>
         </div>
@@ -322,24 +151,14 @@
 
     <footer>
         <div class="footer-content">
-            <p class="credits">Diseñado y Desarrollado en su totalidad por <strong>Matías Gómez</strong></p>
-            <div class="contact-info" style="display: flex; gap: 15px; justify-content: center; margin-top: 10px;">
-                <a href="https://wa.me/5492612404479" target="_blank" class="contact-item" style="color: var(--text-secondary); text-decoration: none;">
-                    <i class="fa-brands fa-whatsapp"></i> +54 9 2612404479
-                </a>
-                <a href="mailto:ftvmati2022@gmail.com" class="contact-item" style="color: var(--text-secondary); text-decoration: none;">
-                    <i class="fa-solid fa-envelope"></i> ftvmati2022@gmail.com
-                </a>
-            </div>
+            <p>FirmaExpress Pro - Matías Gómez</p>
         </div>
     </footer>
 
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
     <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
-    
     <script src="app.js" defer></script>
 </body>
 </html>
