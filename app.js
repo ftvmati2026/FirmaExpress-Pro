@@ -551,7 +551,6 @@ function cargarAuditoriasDeEmpresa() {
     // Filtramos solo por tenantId para evitar errores de índice complejos
     listenerAuditorias = db.collection('auditorias')
         .where("tenantId", "==", currentTenantId)
-        .orderBy('fechaCreacion', 'desc')
         .onSnapshot((snapshot) => {
             
         auditsList.innerHTML = '';
@@ -654,7 +653,6 @@ function cargarHistorialDeEmpresa(tenantUid) {
 
     listenerHistorial = db.collection('auditorias')
         .where("tenantId", "==", tenantUid)
-        .orderBy('fechaCreacion', 'desc')
         .onSnapshot((snapshot) => {
             
         historyList.innerHTML = '';
