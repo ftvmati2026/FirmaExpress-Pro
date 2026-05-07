@@ -36,6 +36,12 @@
                 <button id="btnPerfil" class="icon-btn" title="Mi Perfil / Cambiar Clave" style="display: none;" onclick="abrirModalPerfil()">
                     <i class="fa-solid fa-user-gear"></i>
                 </button>
+<<<<<<< HEAD
+=======
+                <button id="btnDownloadPDF" class="icon-btn" title="Descargar PDF" style="display: none;" onclick="descargarUltimoPDF()">
+                    <i class="fa-solid fa-file-arrow-down"></i>
+                </button>
+>>>>>>> 92671b0e2a1a6709cedaa5dc763651313168a11a
                 <button id="themeToggle" class="icon-btn" aria-label="Cambiar tema">
                     <i class="fa-solid fa-moon"></i>
                 </button>
@@ -88,7 +94,11 @@
 
         <section class="card upload-section">
             <h2><i class="fa-solid fa-cloud-arrow-up"></i> Enviar Documento a Firmar</h2>
+<<<<<<< HEAD
             <p class="subtitle">Subí el PDF original y elegí cómo querés que se aplique la firma digital.</p>
+=======
+            <p class="subtitle">Subí el PDF original y elegí cómo querés que se aplique la firma electrónica.</p>
+>>>>>>> 92671b0e2a1a6709cedaa5dc763651313168a11a
             
             <form id="uploadForm" class="upload-form">
                 <div class="form-group file-upload-wrapper">
@@ -126,6 +136,13 @@
                             </div>
                         </label>
                         <label class="radio-option">
+<<<<<<< HEAD
+=======
+                            <input type="radio" name="modoFirma" value="todas_las_hojas" onchange="document.getElementById('posicionFirmaContainer').style.display='block'"> 
+                            <span><strong>Todas las Hojas:</strong> Estampar la firma en la misma posición en todas las páginas del PDF.</span>
+                        </label>
+                        <label class="radio-option">
+>>>>>>> 92671b0e2a1a6709cedaa5dc763651313168a11a
                             <input type="radio" name="modoFirma" value="hoja_nueva" onchange="document.getElementById('posicionFirmaContainer').style.display='none'"> 
                             <span><strong>Hoja Anexa:</strong> Agregar una nueva hoja legal al final exclusiva para firmas (Ideal documentos largos).</span>
                         </label>
@@ -139,23 +156,42 @@
         </section>
 
         <section class="card list-section">
+<<<<<<< HEAD
             <h2 style="color: var(--primary-color);"><i class="fa-solid fa-clock-rotate-left"></i> Documentos Pendientes <span id="pendingCounter" class="counter-badge" style="display: none;">0</span></h2>
+=======
+            <div class="flex-between" style="margin-bottom: 15px;">
+                <h2><i class="fa-solid fa-file-signature"></i> Documentos Pendientes <span id="pendingCounter" class="counter-badge" style="display: none;">0</span></h2>
+            </div>
+>>>>>>> 92671b0e2a1a6709cedaa5dc763651313168a11a
             <div class="table-container">
                 <table class="modern-table">
                     <thead>
                         <tr>
+<<<<<<< HEAD
                             <th>ARCHIVO PDF</th>
                             <th>ESTADO / INFO</th>
                             <th>ACCIONES</th>
+=======
+                            <th>Archivo PDF</th>
+                            <th>Estado / Info</th>
+                            <th>Acciones</th>
+>>>>>>> 92671b0e2a1a6709cedaa5dc763651313168a11a
                         </tr>
                     </thead>
                     <tbody id="auditsList">
                         <!-- Generado por JS -->
+<<<<<<< HEAD
+=======
+                        <tr class="empty-state">
+                            <td colspan="3">Cargando documentos...</td>
+                        </tr>
+>>>>>>> 92671b0e2a1a6709cedaa5dc763651313168a11a
                     </tbody>
                 </table>
             </div>
         </section>
 
+<<<<<<< HEAD
         <section class="card list-section" style="margin-top: 30px;">
             <h2 style="color: var(--success-color);"><i class="fa-solid fa-history"></i> Historial de Documentos Firmados</h2>
             <div class="table-container">
@@ -166,11 +202,26 @@
                             <th>FECHA FIRMA</th>
                             <th>FIRMANTE</th>
                             <th>ACCIONES</th>
+=======
+        <section class="card list-section">
+            <h2><i class="fa-solid fa-clock-rotate-left"></i> Historial de Documentos Firmados <span id="historyCounter" class="counter-badge" style="display: none;">0</span></h2>
+            <div class="table-container">
+                <table class="modern-table" id="historyTable">
+                    <thead>
+                        <tr>
+                            <th>Archivo PDF</th>
+                            <th>Fecha Firma</th>
+                            <th>Firmante</th>
+                            <th>Acciones</th>
+>>>>>>> 92671b0e2a1a6709cedaa5dc763651313168a11a
                         </tr>
                     </thead>
                     <tbody id="historyList">
                         <!-- Generado por JS -->
+<<<<<<< HEAD
                         <tr class="empty-state"><td colspan="4">No hay documentos firmados todavía.</td></tr>
+=======
+>>>>>>> 92671b0e2a1a6709cedaa5dc763651313168a11a
                     </tbody>
                 </table>
             </div>

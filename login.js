@@ -31,7 +31,7 @@ loginForm.addEventListener('submit', async (e) => {
         await auth.signInWithEmailAndPassword(email, password);
         
         // Si todo sale bien, redirigir al panel principal
-        window.location.href = 'index.html';
+        window.location.href = 'app.html';
         
     } catch (error) {
         console.error("Error al iniciar sesión:", error);
@@ -49,7 +49,7 @@ loginForm.addEventListener('submit', async (e) => {
 // Verificar si ya está logueado para no pedirle la clave de nuevo
 auth.onAuthStateChanged((user) => {
     if (user) {
-        window.location.href = 'index.html';
+        window.location.href = 'app.html';
     }
 });
 

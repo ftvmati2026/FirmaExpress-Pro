@@ -25,6 +25,9 @@ const superAdminDashboard = document.getElementById('superAdminDashboard');
 const tenantDashboard = document.getElementById('tenantDashboard');
 const btnVolverAdmin = document.getElementById('btnVolverAdmin');
 const headerTitle = document.getElementById('headerTitle');
+const btnPerfil = document.getElementById('btnPerfil');
+const btnDownloadHeader = document.getElementById('btnDownloadPDF');
+const historyCounter = document.getElementById('historyCounter');
 
 // ----------------------------------------------------
 // 1. SISTEMA DE RUTEO Y AUTENTICACIÓN (EL CEREBRO)
@@ -72,7 +75,8 @@ function cargarListaEmpresas() {
     const empresasList = document.getElementById('empresasList');
     if (!empresasList) return;
 
-    db.collection('empresas').orderBy('fechaCreacion', 'desc').onSnapshot(snapshot => {
+    // Quitamos el orderBy para asegurar que aparezcan TODAS, incluso las viejas sin fecha
+    db.collection('empresas').onSnapshot(snapshot => {
         empresasList.innerHTML = '';
         if (snapshot.empty) {
             empresasList.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px; color: var(--text-secondary);">No tenés ninguna empresa cliente registrada todavía.</td></tr>';
@@ -381,22 +385,22 @@ function ajustarBrillo(hex, percent) {
 // 3. LÓGICA DE CLIENTE / TENANT (Lo que ven las empresas)
 // ----------------------------------------------------
 function iniciarModoCliente(tenantUid) {
-    // Buscar los datos de la empresa (Nombre y estado activo)
+    // ASEGURAMOS QUE EL PANEL SE VEA SIEMPRE
+    superAdminDashboard.style.display = 'none';
+    tenantDashboard.style.display = 'block';
+    btnVolverAdmin.style.display = 'none'; 
+    btnPerfil.style.display = 'inline-block';
+
     db.collection('empresas').doc(tenantUid).get().then(doc => {
         if(doc.exists) {
             const data = doc.data();
             
-            // Echarlo si la empresa está suspendida
             if (data.activa === false) {
-                alert("Tu cuenta se encuentra suspendida temporalmente por falta de pago o revisión administrativa.\nPor favor, contactate con el administrador del sistema.");
+                alert("Tu cuenta se encuentra suspendida.");
                 auth.signOut();
                 return;
             }
             
-            superAdminDashboard.style.display = 'none';
-            tenantDashboard.style.display = 'block';
-            btnVolverAdmin.style.display = 'none'; 
-            btnPerfil.style.display = 'inline-block'; // Mostrar botón de perfil
             headerTitle.textContent = data.nombre;
 
             // Marca Blanca: Color
@@ -417,6 +421,14 @@ function iniciarModoCliente(tenantUid) {
             }
             
             cargarAuditoriasDeEmpresa();
+            cargarHistorialDeEmpresa(tenantUid);
+        } else {
+            headerTitle.textContent = "Mi Panel de Firma";
+            if (document.getElementById('defaultLogoIcon')) {
+                document.getElementById('defaultLogoIcon').style.display = 'block';
+            }
+            cargarAuditoriasDeEmpresa();
+            cargarHistorialDeEmpresa(tenantUid);
         }
     }).catch(err => {
         console.error("Error validando empresa:", err);
@@ -513,7 +525,11 @@ if (uploadForm) {
                 firmaBase64: null
             });
             
+<<<<<<< HEAD
             const baseURL = window.location.href.substring(0, window.location.href.lastIndexOf("/") + 1);
+=======
+            const baseURL = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+>>>>>>> 92671b0e2a1a6709cedaa5dc763651313168a11a
             const linkUnico = `${baseURL}firmar.html?id=${docRef.id}`;
             
             alert(`¡Documento guardado con éxito!\n\nPodés copiar el link haciendo clic en el ícono de WhatsApp en la tabla de abajo.`);
@@ -542,7 +558,11 @@ function cargarAuditoriasDeEmpresa() {
     
     const pendingCounter = document.getElementById('pendingCounter');
 
+<<<<<<< HEAD
     // MODO ZERO-CONFIG: Ordenamos en memoria para que no tengas que crear índices en Firebase
+=======
+    // Filtramos solo por tenantId para evitar errores de índice complejos
+>>>>>>> 92671b0e2a1a6709cedaa5dc763651313168a11a
     listenerAuditorias = db.collection('auditorias')
         .where("tenantId", "==", currentTenantId)
         .onSnapshot((snapshot) => {
@@ -559,6 +579,7 @@ function cargarAuditoriasDeEmpresa() {
             return;
         }
 
+<<<<<<< HEAD
         // Convertimos a array y ordenamos por fecha de creación (descendente)
         const docs = [];
         snapshot.forEach(doc => docs.push({ id: doc.id, ...doc.data() }));
@@ -568,10 +589,22 @@ function cargarAuditoriasDeEmpresa() {
             const dateB = b.fechaCreacion ? (b.fechaCreacion.toMillis ? b.fechaCreacion.toMillis() : b.fechaCreacion) : Date.now();
             return dateB - dateA;
         });
+=======
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            
+            // FILTRADO CLIENT-SIDE PARA EVITAR ERROR DE ÍNDICE
+            if (data.estado !== "Pendiente") return;
+            
+            pendingCount++;
+            const baseURL = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+            const linkACompartir = `${baseURL}firmar.html?id=${doc.id}`;
+>>>>>>> 92671b0e2a1a6709cedaa5dc763651313168a11a
 
         docs.forEach((data) => {
             const esFirmado = data.estado === "Firmado";
             const tr = document.createElement('tr');
+<<<<<<< HEAD
             
             if (esFirmado) {
                 hasSigned = true;
@@ -606,6 +639,47 @@ function cargarAuditoriasDeEmpresa() {
                         infoExtra = `<span class="status-age" style="display:block; font-size:0.75rem; color:var(--warning-color); margin-top:4px;"><i class="fa-regular fa-clock"></i> ${diasTexto}</span>`;
                     } catch (e) {}
                 }
+=======
+            const badgeClass = 'badge-pending';
+            
+            // Etiqueta visual del modo de firma
+            let etiquetaFirma = 'Anexa';
+            if (data.modoFirma === 'misma_hoja') etiquetaFirma = 'Misma Hoja';
+            if (data.modoFirma === 'todas_las_hojas') etiquetaFirma = 'Todas las Hojas';
+            
+            let infoExtra = '';
+            
+            if (data.fechaCreacion) {
+                try {
+                    const fecha = data.fechaCreacion.toDate();
+                    const hoy = new Date();
+                    const diffTime = Math.abs(hoy - fecha);
+                    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+                    const fechaLegible = fecha.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                    const diasTexto = diffDays === 0 ? 'Hoy' : `Hace ${diffDays} ${diffDays === 1 ? 'día' : 'días'}`;
+
+                    infoExtra += `
+                        <span class="status-date" style="display:block; font-size:0.8rem; margin-top:6px; color:var(--text-secondary);"><i class="fa-regular fa-calendar"></i> ${fechaLegible}</span>
+                        <span class="status-age" style="display:block; font-size:0.8rem; color:var(--warning-color); margin-top:2px;"><i class="fa-regular fa-clock"></i> ${diasTexto}</span>
+                    `;
+                } catch (e) {
+                    console.warn(e);
+                }
+            }
+            infoExtra += `<div style="font-size:0.8rem; margin-top:4px; font-weight: 500; color:var(--text-secondary);"><i class="fa-solid fa-file-invoice"></i> Tipo: ${etiquetaFirma}</div>`;
+            
+            let estadoHtml = `<div class="status-info-container"><span class="badge ${badgeClass}">${data.estado}</span>${infoExtra}</div>`;
+            
+            let botonesAccion = `
+                <button class="icon-btn" title="Copiar link para enviar por WhatsApp" onclick="copiarLink('${linkACompartir}')" style="color: #25D366;">
+                    <i class="fa-brands fa-whatsapp"></i>
+                </button>
+                <button class="icon-btn" title="Eliminar registro" onclick="eliminarAuditoria('${doc.id}')" style="color: var(--danger-color);">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            `;
+>>>>>>> 92671b0e2a1a6709cedaa5dc763651313168a11a
 
                 tr.innerHTML = `
                     <td><strong>${data.nombreArchivo}</strong></td>
@@ -629,6 +703,7 @@ function cargarAuditoriasDeEmpresa() {
             }
         });
 
+<<<<<<< HEAD
         // Estados vacíos refinados
         if (pendingCount === 0) {
             auditsList.innerHTML = `<tr class="empty-state"><td colspan="3">No hay documentos pendientes.</td></tr>`;
@@ -636,6 +711,11 @@ function cargarAuditoriasDeEmpresa() {
         if (!hasSigned) {
             historyList.innerHTML = `<tr class="empty-state"><td colspan="4">No hay historial disponible.</td></tr>`;
         }
+=======
+        if (pendingCount === 0) {
+            auditsList.innerHTML = `<tr class="empty-state"><td colspan="3">No hay documentos pendientes.</td></tr>`;
+        }
+>>>>>>> 92671b0e2a1a6709cedaa5dc763651313168a11a
 
         if (pendingCounter) {
             pendingCounter.textContent = pendingCount;
@@ -643,19 +723,117 @@ function cargarAuditoriasDeEmpresa() {
         }
     }, (error) => {
         console.error("Error BD:", error);
+<<<<<<< HEAD
         auditsList.innerHTML = `<tr><td colspan="3"><div class="error-state"><i class="fa-solid fa-triangle-exclamation"></i><div class="error-message-text">Error de conexión con la base de datos.</div></div></td></tr>`;
+=======
+>>>>>>> 92671b0e2a1a6709cedaa5dc763651313168a11a
     });
+}
+
+// NUEVA FUNCIÓN: Cargar Historial (Documentos ya firmados)
+let listenerHistorial = null;
+let ultimoPDFId = null;
+
+function cargarHistorialDeEmpresa(tenantUid) {
+    const historyList = document.getElementById('historyList');
+    if (!historyList || !tenantUid) return;
+    
+    if(listenerHistorial) listenerHistorial();
+    
+    const historyCounter = document.getElementById('historyCounter');
+    const btnDownloadHeader = document.getElementById('btnDownloadPDF');
+
+    listenerHistorial = db.collection('auditorias')
+        .where("tenantId", "==", tenantUid)
+        .onSnapshot((snapshot) => {
+            
+        historyList.innerHTML = '';
+        let historyCount = 0;
+        
+        if (snapshot.empty) {
+            historyList.innerHTML = `<tr class="empty-state"><td colspan="4">No hay documentos firmados en el historial.</td></tr>`;
+            if (historyCounter) historyCounter.style.display = 'none';
+            if (btnDownloadHeader) btnDownloadHeader.style.display = 'none';
+            ultimoPDFId = null;
+            return;
+        }
+
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            
+            // FILTRADO CLIENT-SIDE
+            if (data.estado !== "Firmado") return;
+            
+            historyCount++;
+            const tr = document.createElement('tr');
+            
+            // El primero que encontremos será el más reciente
+            if (!ultimoPDFId) {
+                ultimoPDFId = doc.id;
+                if (btnDownloadHeader) btnDownloadHeader.style.display = 'inline-flex';
+            }
+
+            let fechaFirmaStr = '---';
+            if (data.fechaFirma) {
+                fechaFirmaStr = data.fechaFirma.toDate().toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            }
+
+            tr.innerHTML = `
+                <td><i class="fa-solid fa-file-pdf" style="color: #e11d48; margin-right: 8px;"></i> ${data.nombreArchivo}</td>
+                <td>${fechaFirmaStr}</td>
+                <td><strong>${data.afiliadoNombre || 'N/A'}</strong><br><small style="color: var(--text-secondary)">DNI: ${data.afiliadoDNI || '---'}</small></td>
+                <td>
+                    <button class="icon-btn" title="Descargar PDF firmado" onclick="descargarPDF('${doc.id}')" style="color: var(--success-color);">
+                        <i class="fa-solid fa-download"></i>
+                    </button>
+                    <button class="icon-btn" title="Eliminar registro" onclick="eliminarAuditoria('${doc.id}')" style="color: var(--danger-color);">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            historyList.appendChild(tr);
+        });
+
+        if (historyCount === 0) {
+            historyList.innerHTML = `<tr class="empty-state"><td colspan="4">No hay documentos firmados en el historial.</td></tr>`;
+            if (btnDownloadHeader) btnDownloadHeader.style.display = 'none';
+            ultimoPDFId = null;
+        }
+
+        if (historyCounter) {
+            historyCounter.textContent = historyCount;
+            historyCounter.style.display = historyCount > 0 ? 'inline-block' : 'none';
+        }
+    }, (error) => {
+        console.error("Error Historial:", error);
+    });
+}
+
+window.descargarUltimoPDF = function() {
+    if (ultimoPDFId) {
+        window.descargarPDF(ultimoPDFId);
+    } else {
+        alert("No hay documentos firmados para descargar.");
+    }
 }
 
 // ----------------------------------------------------
 // 4. FUNCIONES GLOBALES (INYECCIÓN DE FIRMA Y HERRAMIENTAS)
 // ----------------------------------------------------
 
+window.compartirWhatsApp = function(id, nombreArchivo) {
+    const baseURL = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+    const linkUnico = `${baseURL}firmar.html?id=${id}`;
+    const mensaje = `Hola! Te envío el documento "${nombreArchivo}" para firmar electrónicamente. Podés hacerlo desde tu celular entrando acá: ${linkUnico}`;
+    const url = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+    window.open(url, '_blank');
+}
+
 window.copiarLink = function(link) {
     navigator.clipboard.writeText(link).then(() => {
-        alert("¡Link copiado!\n\nYa podés mandarlo por WhatsApp al cliente.");
+        alert("¡Link copiado con éxito!\n\nYa podés pegarlo en el chat de WhatsApp de tu cliente.");
     }).catch(err => {
-        alert("Enlace:\n" + link); 
+        alert("No se pudo copiar automáticamente. Por favor, copiá este enlace manualmente:\n\n" + link); 
     });
 }
 
@@ -691,57 +869,72 @@ window.descargarPDF = async function(id) {
         // ==========================================
         // LÓGICA DE DÓNDE PONER LA FIRMA SEGÚN EL MODO
         // ==========================================
-        if (data.modoFirma === 'misma_hoja') {
+        const pos = data.posicionFirma || 'abajo_izquierda';
+
+        if (data.modoFirma === 'misma_hoja' || data.modoFirma === 'todas_las_hojas') {
             
-            // MODO COMPACTO: En la última hoja del documento original.
             const pages = pdfDoc.getPages();
-            page = pages[pages.length - 1]; // agarramos la última hoja existente
-            
-            const { height, width } = page.getSize();
-            const pos = data.posicionFirma || 'abajo_izquierda';
-            
-            // Posición Y
-            if (pos.startsWith('arriba')) {
-                currentY = height - 100;
-            } else if (pos.startsWith('centro')) {
-                currentY = height / 2;
-            } else {
-                // abajo
-                currentY = 150; 
+            const pagesToSign = data.modoFirma === 'todas_las_hojas' ? pages : [pages[pages.length - 1]];
+
+            for (const pageItem of pagesToSign) {
+                const { height, width } = pageItem.getSize();
+                let startX = 50;
+                let currentY = 150;
+
+                // Calcular Y
+                if (pos.startsWith('arriba')) currentY = height - 100;
+                else if (pos.startsWith('centro')) currentY = height / 2;
+                else currentY = 150; // abajo
+
+                // Calcular X
+                if (pos.endsWith('derecha')) startX = width - 210;
+                else if (pos.endsWith('centro') || pos === 'centro') startX = (width - 160) / 2;
+                else startX = 50; // izquierda
+
+                // Inyectar Firma
+                if (base64Firma) {
+                    const signatureImage = await pdfDoc.embedPng(base64Firma);
+                    pageItem.drawImage(signatureImage, { x: startX, y: currentY, width: 160, height: 80 });
+                }
+
+                // Textos del firmante
+                const textYStart = currentY - 15;
+                pageItem.drawText(`Firmado electrónicamente por: ${data.afiliadoNombre || 'N/A'}`, { x: startX, y: textYStart, size: 9, font: fontBold });
+                pageItem.drawText(`DNI: ${data.afiliadoDNI || '---'}`, { x: startX, y: textYStart - 12, size: 8, font: font });
+                pageItem.drawText(`Fecha: ${data.fechaFirma ? data.fechaFirma.toDate().toLocaleString('es-AR') : new Date().toLocaleString('es-AR')}`, { x: startX, y: textYStart - 22, size: 8, font: font });
+                
+                // Línea divisoria
+                pageItem.drawLine({
+                    start: { x: startX, y: currentY + 20 },
+                    end: { x: startX + 160, y: currentY + 20 },
+                    thickness: 1,
+                    color: PDFLib.rgb(0.8, 0.8, 0.8),
+                });
             }
-            
-            // Posición X
-            if (pos.endsWith('derecha')) {
-                startX = width - 210; // 160 (firma) + 50 (margen)
-            } else if (pos.endsWith('centro') || pos === 'centro') {
-                startX = (width - 160) / 2;
-            } else {
-                startX = 50; // izquierda
-            }
-            
-            // Imprimimos una linea divisoria estetica
-            page.drawLine({
-                start: { x: startX, y: currentY + 20 },
-                end: { x: startX + 160, y: currentY + 20 },
-                thickness: 1,
-                color: PDFLib.rgb(0.8, 0.8, 0.8),
-            });
 
         } else {
-            
-            // MODO HOJA ANEXA
-            page = pdfDoc.addPage(PDFLib.PageSizes.A4);
+            // MODO HOJA ANEXA (Se mantiene igual)
+            const page = pdfDoc.addPage(PDFLib.PageSizes.A4);
             const { height } = page.getSize();
-            currentY = height - 70;
+            let currentY = height - 70;
             
-            // Textos legales (sólo se imprimen si es hoja nueva)
             page.drawText('DECLARACIÓN DE CONFORMIDAD', { x: marginLeft, y: currentY, size: 14, font: fontBold });
             currentY -= 40;
-            const parrafoLegal = 'Estoy consciente de haber leído y comprendido lo que estoy firmando \ncon total conformidad. Asimismo, manifiesto mi acuerdo con \nsu contenido y acepto su validación mediante mi firma digital \nelectrónica.';
+            const parrafoLegal = 'Estoy consciente de haber leído y comprendido lo que estoy firmando \ncon total conformidad. Asimismo, manifiesto mi acuerdo con \nsu contenido y acepto su validación mediante mi firma electrónica.';
             page.drawText(parrafoLegal, { x: marginLeft, y: currentY, size: 11, font: font, lineHeight: 16 });
             currentY -= 80;
             page.drawText('DATOS DE CONFIRMACIÓN', { x: marginLeft, y: currentY, size: 14, font: fontBold });
             currentY -= 30;
+
+            if (base64Firma) {
+                const signatureImage = await pdfDoc.embedPng(base64Firma);
+                page.drawImage(signatureImage, { x: marginLeft, y: currentY - 80, width: 160, height: 80 });
+                currentY -= 110;
+            }
+
+            page.drawText(`Nombre: ${data.afiliadoNombre || 'N/A'}`, { x: marginLeft, y: currentY, size: 10, font: fontBold });
+            page.drawText(`DNI: ${data.afiliadoDNI || '---'}`, { x: marginLeft, y: currentY - 15, size: 10, font: font });
+            page.drawText(`Fecha: ${data.fechaFirma ? data.fechaFirma.toDate().toLocaleString('es-AR') : new Date().toLocaleString('es-AR')}`, { x: marginLeft, y: currentY - 30, size: 10, font: font });
         }
 
         // ==========================================
