@@ -537,11 +537,9 @@ function cargarAuditoriasDeEmpresa() {
     
     const pendingCounter = document.getElementById('pendingCounter');
 
-    // FILTRO VITAL: where("tenantId", "==", currentTenantId)
-    // FILTRO: Solo documentos Pendientes
+    // Filtramos solo por tenantId para evitar errores de índice complejos
     listenerAuditorias = db.collection('auditorias')
         .where("tenantId", "==", currentTenantId)
-        .where("estado", "==", "Pendiente")
         .orderBy('fechaCreacion', 'desc')
         .onSnapshot((snapshot) => {
             
@@ -556,39 +554,40 @@ function cargarAuditoriasDeEmpresa() {
 
         snapshot.forEach((doc) => {
             const data = doc.data();
-            const esFirmado = data.estado === "Firmado";
+            
+            // FILTRADO CLIENT-SIDE PARA EVITAR ERROR DE ÍNDICE
+            if (data.estado !== "Pendiente") return;
+            
+            pendingCount++;
             const baseURL = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
             const linkACompartir = `${baseURL}firmar.html?id=${doc.id}`;
 
             const tr = document.createElement('tr');
-            const badgeClass = esFirmado ? 'badge-signed' : 'badge-pending';
+            const badgeClass = 'badge-pending';
             
             // Etiqueta visual de si es Misma Hoja o Hoja Anexa
             let etiquetaFirma = data.modoFirma === 'misma_hoja' ? 'Misma Hoja' : 'Anexa';
             let infoExtra = '';
             
-            if (!esFirmado) {
-                pendingCount++;
-                if (data.fechaCreacion) {
-                    try {
-                        const fecha = data.fechaCreacion.toDate();
-                        const hoy = new Date();
-                        const diffTime = Math.abs(hoy - fecha);
-                        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            if (data.fechaCreacion) {
+                try {
+                    const fecha = data.fechaCreacion.toDate();
+                    const hoy = new Date();
+                    const diffTime = Math.abs(hoy - fecha);
+                    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-                        const fechaLegible = fecha.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                        const diasTexto = diffDays === 0 ? 'Hoy' : `Hace ${diffDays} ${diffDays === 1 ? 'día' : 'días'}`;
+                    const fechaLegible = fecha.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                    const diasTexto = diffDays === 0 ? 'Hoy' : `Hace ${diffDays} ${diffDays === 1 ? 'día' : 'días'}`;
 
-                        infoExtra += `
-                            <span class="status-date" style="display:block; font-size:0.8rem; margin-top:6px; color:var(--text-secondary);"><i class="fa-regular fa-calendar"></i> ${fechaLegible}</span>
-                            <span class="status-age" style="display:block; font-size:0.8rem; color:var(--warning-color); margin-top:2px;"><i class="fa-regular fa-clock"></i> ${diasTexto}</span>
-                        `;
-                    } catch (e) {
-                        console.warn(e);
-                    }
+                    infoExtra += `
+                        <span class="status-date" style="display:block; font-size:0.8rem; margin-top:6px; color:var(--text-secondary);"><i class="fa-regular fa-calendar"></i> ${fechaLegible}</span>
+                        <span class="status-age" style="display:block; font-size:0.8rem; color:var(--warning-color); margin-top:2px;"><i class="fa-regular fa-clock"></i> ${diasTexto}</span>
+                    `;
+                } catch (e) {
+                    console.warn(e);
                 }
-                infoExtra += `<div style="font-size:0.8rem; margin-top:4px; font-weight: 500; color:var(--text-secondary);"><i class="fa-solid fa-file-invoice"></i> Tipo: ${etiquetaFirma}</div>`;
             }
+            infoExtra += `<div style="font-size:0.8rem; margin-top:4px; font-weight: 500; color:var(--text-secondary);"><i class="fa-solid fa-file-invoice"></i> Tipo: ${etiquetaFirma}</div>`;
             
             let estadoHtml = `<div class="status-info-container"><span class="badge ${badgeClass}">${data.estado}</span>${infoExtra}</div>`;
             
@@ -612,6 +611,10 @@ function cargarAuditoriasDeEmpresa() {
             auditsList.appendChild(tr);
         });
 
+        if (pendingCount === 0) {
+            auditsList.innerHTML = `<tr class="empty-state"><td colspan="3">No hay documentos pendientes.</td></tr>`;
+        }
+
         if (pendingCounter) {
             if (pendingCount > 0) {
                 pendingCounter.textContent = pendingCount;
@@ -622,10 +625,6 @@ function cargarAuditoriasDeEmpresa() {
         }
     }, (error) => {
         console.error("Error BD:", error);
-        if (error.message.includes('requires an index')) {
-            // FIREBASE REQUIERE UN INDICE LA PRIMERA VEZ QUE HACEMOS WHERE + ORDERBY
-            auditsList.innerHTML = `<tr><td colspan="3"><div style="background:var(--danger-color); color:white; padding:15px; border-radius:8px; text-align:center;"><b>ALERTA TÉCNICA (SOLO APARECE UNA VEZ):</b><br>Falta crear un índice en Firebase.<br>Presioná F12, andá a 'Console' y hacé clic en el link azul para crearlo.</div></td></tr>`;
-        }
     });
 }
 
@@ -644,11 +643,11 @@ function cargarHistorialDeEmpresa(tenantUid) {
 
     listenerHistorial = db.collection('auditorias')
         .where("tenantId", "==", tenantUid)
-        .where("estado", "==", "Firmado")
         .orderBy('fechaCreacion', 'desc')
         .onSnapshot((snapshot) => {
             
         historyList.innerHTML = '';
+        let historyCount = 0;
         
         if (snapshot.empty) {
             historyList.innerHTML = `<tr class="empty-state"><td colspan="4">No hay documentos firmados en el historial.</td></tr>`;
@@ -658,19 +657,21 @@ function cargarHistorialDeEmpresa(tenantUid) {
             return;
         }
 
-        // El primero de la lista es el último firmado (por el orderBy desc)
-        ultimoPDFId = snapshot.docs[0].id;
-        if (btnDownloadHeader) btnDownloadHeader.style.display = 'inline-flex';
-
-        if (historyCounter) {
-            historyCounter.textContent = snapshot.size;
-            historyCounter.style.display = 'inline-block';
-        }
-
         snapshot.forEach((doc) => {
             const data = doc.data();
+            
+            // FILTRADO CLIENT-SIDE
+            if (data.estado !== "Firmado") return;
+            
+            historyCount++;
             const tr = document.createElement('tr');
             
+            // El primero que encontremos será el más reciente
+            if (!ultimoPDFId) {
+                ultimoPDFId = doc.id;
+                if (btnDownloadHeader) btnDownloadHeader.style.display = 'inline-flex';
+            }
+
             let fechaFirmaStr = '---';
             if (data.fechaFirma) {
                 fechaFirmaStr = data.fechaFirma.toDate().toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -691,6 +692,17 @@ function cargarHistorialDeEmpresa(tenantUid) {
             `;
             historyList.appendChild(tr);
         });
+
+        if (historyCount === 0) {
+            historyList.innerHTML = `<tr class="empty-state"><td colspan="4">No hay documentos firmados en el historial.</td></tr>`;
+            if (btnDownloadHeader) btnDownloadHeader.style.display = 'none';
+            ultimoPDFId = null;
+        }
+
+        if (historyCounter) {
+            historyCounter.textContent = historyCount;
+            historyCounter.style.display = historyCount > 0 ? 'inline-block' : 'none';
+        }
     }, (error) => {
         console.error("Error Historial:", error);
     });
