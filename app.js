@@ -509,7 +509,7 @@ if (uploadForm) {
                 firmaBase64: null
             });
             
-            const baseURL = window.location.href.split('app.html')[0];
+            const baseURL = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
             const linkUnico = `${baseURL}firmar.html?id=${docRef.id}`;
             
             alert(`¡Documento guardado con éxito!\n\nPodés copiar el link haciendo clic en el ícono de WhatsApp en la tabla de abajo.`);
@@ -557,7 +557,7 @@ function cargarAuditoriasDeEmpresa() {
         snapshot.forEach((doc) => {
             const data = doc.data();
             const esFirmado = data.estado === "Firmado";
-            const baseURL = window.location.href.split('app.html')[0];
+            const baseURL = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
             const linkACompartir = `${baseURL}firmar.html?id=${doc.id}`;
 
             const tr = document.createElement('tr');
@@ -707,6 +707,14 @@ window.descargarUltimoPDF = function() {
 // ----------------------------------------------------
 // 4. FUNCIONES GLOBALES (INYECCIÓN DE FIRMA Y HERRAMIENTAS)
 // ----------------------------------------------------
+
+window.compartirWhatsApp = function(id, nombreArchivo) {
+    const baseURL = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+    const linkUnico = `${baseURL}firmar.html?id=${id}`;
+    const mensaje = `Hola! Te envío el documento "${nombreArchivo}" para firmar electrónicamente. Podés hacerlo desde tu celular entrando acá: ${linkUnico}`;
+    const url = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+    window.open(url, '_blank');
+}
 
 window.copiarLink = function(link) {
     navigator.clipboard.writeText(link).then(() => {
