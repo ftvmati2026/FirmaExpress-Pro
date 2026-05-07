@@ -565,8 +565,11 @@ function cargarAuditoriasDeEmpresa() {
             const tr = document.createElement('tr');
             const badgeClass = 'badge-pending';
             
-            // Etiqueta visual de si es Misma Hoja o Hoja Anexa
-            let etiquetaFirma = data.modoFirma === 'misma_hoja' ? 'Misma Hoja' : 'Anexa';
+            // Etiqueta visual del modo de firma
+            let etiquetaFirma = 'Anexa';
+            if (data.modoFirma === 'misma_hoja') etiquetaFirma = 'Misma Hoja';
+            if (data.modoFirma === 'todas_las_hojas') etiquetaFirma = 'Todas las Hojas';
+            
             let infoExtra = '';
             
             if (data.fechaCreacion) {
@@ -765,50 +768,55 @@ window.descargarPDF = async function(id) {
         // ==========================================
         // LÓGICA DE DÓNDE PONER LA FIRMA SEGÚN EL MODO
         // ==========================================
-        if (data.modoFirma === 'misma_hoja') {
+        const pos = data.posicionFirma || 'abajo_izquierda';
+
+        if (data.modoFirma === 'misma_hoja' || data.modoFirma === 'todas_las_hojas') {
             
-            // MODO COMPACTO: En la última hoja del documento original.
             const pages = pdfDoc.getPages();
-            page = pages[pages.length - 1]; // agarramos la última hoja existente
-            
-            const { height, width } = page.getSize();
-            const pos = data.posicionFirma || 'abajo_izquierda';
-            
-            // Posición Y
-            if (pos.startsWith('arriba')) {
-                currentY = height - 100;
-            } else if (pos.startsWith('centro')) {
-                currentY = height / 2;
-            } else {
-                // abajo
-                currentY = 150; 
+            const pagesToSign = data.modoFirma === 'todas_las_hojas' ? pages : [pages[pages.length - 1]];
+
+            for (const pageItem of pagesToSign) {
+                const { height, width } = pageItem.getSize();
+                let startX = 50;
+                let currentY = 150;
+
+                // Calcular Y
+                if (pos.startsWith('arriba')) currentY = height - 100;
+                else if (pos.startsWith('centro')) currentY = height / 2;
+                else currentY = 150; // abajo
+
+                // Calcular X
+                if (pos.endsWith('derecha')) startX = width - 210;
+                else if (pos.endsWith('centro') || pos === 'centro') startX = (width - 160) / 2;
+                else startX = 50; // izquierda
+
+                // Inyectar Firma
+                if (base64Firma) {
+                    const signatureImage = await pdfDoc.embedPng(base64Firma);
+                    pageItem.drawImage(signatureImage, { x: startX, y: currentY, width: 160, height: 80 });
+                }
+
+                // Textos del firmante
+                const textYStart = currentY - 15;
+                pageItem.drawText(`Firmado electrónicamente por: ${data.afiliadoNombre || 'N/A'}`, { x: startX, y: textYStart, size: 9, font: fontBold });
+                pageItem.drawText(`DNI: ${data.afiliadoDNI || '---'}`, { x: startX, y: textYStart - 12, size: 8, font: font });
+                pageItem.drawText(`Fecha: ${data.fechaFirma ? data.fechaFirma.toDate().toLocaleString('es-AR') : new Date().toLocaleString('es-AR')}`, { x: startX, y: textYStart - 22, size: 8, font: font });
+                
+                // Línea divisoria
+                pageItem.drawLine({
+                    start: { x: startX, y: currentY + 20 },
+                    end: { x: startX + 160, y: currentY + 20 },
+                    thickness: 1,
+                    color: PDFLib.rgb(0.8, 0.8, 0.8),
+                });
             }
-            
-            // Posición X
-            if (pos.endsWith('derecha')) {
-                startX = width - 210; // 160 (firma) + 50 (margen)
-            } else if (pos.endsWith('centro') || pos === 'centro') {
-                startX = (width - 160) / 2;
-            } else {
-                startX = 50; // izquierda
-            }
-            
-            // Imprimimos una linea divisoria estetica
-            page.drawLine({
-                start: { x: startX, y: currentY + 20 },
-                end: { x: startX + 160, y: currentY + 20 },
-                thickness: 1,
-                color: PDFLib.rgb(0.8, 0.8, 0.8),
-            });
 
         } else {
-            
-            // MODO HOJA ANEXA
-            page = pdfDoc.addPage(PDFLib.PageSizes.A4);
+            // MODO HOJA ANEXA (Se mantiene igual)
+            const page = pdfDoc.addPage(PDFLib.PageSizes.A4);
             const { height } = page.getSize();
-            currentY = height - 70;
+            let currentY = height - 70;
             
-            // Textos legales (sólo se imprimen si es hoja nueva)
             page.drawText('DECLARACIÓN DE CONFORMIDAD', { x: marginLeft, y: currentY, size: 14, font: fontBold });
             currentY -= 40;
             const parrafoLegal = 'Estoy consciente de haber leído y comprendido lo que estoy firmando \ncon total conformidad. Asimismo, manifiesto mi acuerdo con \nsu contenido y acepto su validación mediante mi firma electrónica.';
@@ -816,6 +824,16 @@ window.descargarPDF = async function(id) {
             currentY -= 80;
             page.drawText('DATOS DE CONFIRMACIÓN', { x: marginLeft, y: currentY, size: 14, font: fontBold });
             currentY -= 30;
+
+            if (base64Firma) {
+                const signatureImage = await pdfDoc.embedPng(base64Firma);
+                page.drawImage(signatureImage, { x: marginLeft, y: currentY - 80, width: 160, height: 80 });
+                currentY -= 110;
+            }
+
+            page.drawText(`Nombre: ${data.afiliadoNombre || 'N/A'}`, { x: marginLeft, y: currentY, size: 10, font: fontBold });
+            page.drawText(`DNI: ${data.afiliadoDNI || '---'}`, { x: marginLeft, y: currentY - 15, size: 10, font: font });
+            page.drawText(`Fecha: ${data.fechaFirma ? data.fechaFirma.toDate().toLocaleString('es-AR') : new Date().toLocaleString('es-AR')}`, { x: marginLeft, y: currentY - 30, size: 10, font: font });
         }
 
         // ==========================================

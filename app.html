@@ -129,6 +129,10 @@
                             </div>
                         </label>
                         <label class="radio-option">
+                            <input type="radio" name="modoFirma" value="todas_las_hojas" onchange="document.getElementById('posicionFirmaContainer').style.display='block'"> 
+                            <span><strong>Todas las Hojas:</strong> Estampar la firma en la misma posición en todas las páginas del PDF.</span>
+                        </label>
+                        <label class="radio-option">
                             <input type="radio" name="modoFirma" value="hoja_nueva" onchange="document.getElementById('posicionFirmaContainer').style.display='none'"> 
                             <span><strong>Hoja Anexa:</strong> Agregar una nueva hoja legal al final exclusiva para firmas (Ideal documentos largos).</span>
                         </label>
