@@ -25,6 +25,9 @@ const superAdminDashboard = document.getElementById('superAdminDashboard');
 const tenantDashboard = document.getElementById('tenantDashboard');
 const btnVolverAdmin = document.getElementById('btnVolverAdmin');
 const headerTitle = document.getElementById('headerTitle');
+const btnPerfil = document.getElementById('btnPerfil');
+const btnDownloadHeader = document.getElementById('btnDownloadPDF');
+const historyCounter = document.getElementById('historyCounter');
 
 // ----------------------------------------------------
 // 1. SISTEMA DE RUTEO Y AUTENTICACIÓN (EL CEREBRO)
