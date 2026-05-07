@@ -417,6 +417,7 @@ function iniciarModoCliente(tenantUid) {
             }
             
             cargarAuditoriasDeEmpresa();
+            cargarHistorialDeEmpresa(tenantUid);
         }
     }).catch(err => {
         console.error("Error validando empresa:", err);
@@ -537,8 +538,10 @@ function cargarAuditoriasDeEmpresa() {
     const pendingCounter = document.getElementById('pendingCounter');
 
     // FILTRO VITAL: where("tenantId", "==", currentTenantId)
+    // FILTRO: Solo documentos Pendientes
     listenerAuditorias = db.collection('auditorias')
         .where("tenantId", "==", currentTenantId)
+        .where("estado", "==", "Pendiente")
         .orderBy('fechaCreacion', 'desc')
         .onSnapshot((snapshot) => {
             
@@ -589,26 +592,17 @@ function cargarAuditoriasDeEmpresa() {
             
             let estadoHtml = `<div class="status-info-container"><span class="badge ${badgeClass}">${data.estado}</span>${infoExtra}</div>`;
             
-            let botonesAccion = '';
-            if (esFirmado) {
-                botonesAccion = `
-                    <button class="icon-btn" title="Descargar PDF firmado" onclick="descargarPDF('${doc.id}')" style="color: var(--success-color);">
-                        <i class="fa-solid fa-download"></i>
-                    </button>
-                    <button class="icon-btn" title="Eliminar registro" onclick="eliminarAuditoria('${doc.id}')" style="color: var(--danger-color);">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                `;
-            } else {
-                botonesAccion = `
-                    <button class="icon-btn" title="Copiar link para enviar" onclick="copiarLink('${linkACompartir}')" style="color: var(--primary-color);">
-                        <i class="fa-brands fa-whatsapp"></i>
-                    </button>
-                    <button class="icon-btn" title="Eliminar registro" onclick="eliminarAuditoria('${doc.id}')" style="color: var(--danger-color);">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                `;
-            }
+            let botonesAccion = `
+                <button class="icon-btn" title="Compartir por WhatsApp" onclick="compartirWhatsApp('${doc.id}', '${data.nombreArchivo}')" style="color: #25D366;">
+                    <i class="fa-brands fa-whatsapp"></i>
+                </button>
+                <button class="icon-btn" title="Copiar Link" onclick="copiarLink('${linkACompartir}')">
+                    <i class="fa-solid fa-copy"></i>
+                </button>
+                <button class="icon-btn" title="Eliminar registro" onclick="eliminarAuditoria('${doc.id}')" style="color: var(--danger-color);">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            `;
 
             tr.innerHTML = `
                 <td><strong>${data.nombreArchivo}</strong></td>
@@ -633,6 +627,81 @@ function cargarAuditoriasDeEmpresa() {
             auditsList.innerHTML = `<tr><td colspan="3"><div style="background:var(--danger-color); color:white; padding:15px; border-radius:8px; text-align:center;"><b>ALERTA TÉCNICA (SOLO APARECE UNA VEZ):</b><br>Falta crear un índice en Firebase.<br>Presioná F12, andá a 'Console' y hacé clic en el link azul para crearlo.</div></td></tr>`;
         }
     });
+}
+
+// NUEVA FUNCIÓN: Cargar Historial (Documentos ya firmados)
+let listenerHistorial = null;
+let ultimoPDFId = null;
+
+function cargarHistorialDeEmpresa(tenantUid) {
+    const historyList = document.getElementById('historyList');
+    if (!historyList || !tenantUid) return;
+    
+    if(listenerHistorial) listenerHistorial();
+    
+    const historyCounter = document.getElementById('historyCounter');
+    const btnDownloadHeader = document.getElementById('btnDownloadPDF');
+
+    listenerHistorial = db.collection('auditorias')
+        .where("tenantId", "==", tenantUid)
+        .where("estado", "==", "Firmado")
+        .orderBy('fechaCreacion', 'desc')
+        .onSnapshot((snapshot) => {
+            
+        historyList.innerHTML = '';
+        
+        if (snapshot.empty) {
+            historyList.innerHTML = `<tr class="empty-state"><td colspan="4">No hay documentos firmados en el historial.</td></tr>`;
+            if (historyCounter) historyCounter.style.display = 'none';
+            if (btnDownloadHeader) btnDownloadHeader.style.display = 'none';
+            ultimoPDFId = null;
+            return;
+        }
+
+        // El primero de la lista es el último firmado (por el orderBy desc)
+        ultimoPDFId = snapshot.docs[0].id;
+        if (btnDownloadHeader) btnDownloadHeader.style.display = 'inline-flex';
+
+        if (historyCounter) {
+            historyCounter.textContent = snapshot.size;
+            historyCounter.style.display = 'inline-block';
+        }
+
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            const tr = document.createElement('tr');
+            
+            let fechaFirmaStr = '---';
+            if (data.fechaFirma) {
+                fechaFirmaStr = data.fechaFirma.toDate().toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            }
+
+            tr.innerHTML = `
+                <td><i class="fa-solid fa-file-pdf" style="color: #e11d48; margin-right: 8px;"></i> ${data.nombreArchivo}</td>
+                <td>${fechaFirmaStr}</td>
+                <td><strong>${data.afiliadoNombre || 'N/A'}</strong><br><small style="color: var(--text-secondary)">DNI: ${data.afiliadoDNI || '---'}</small></td>
+                <td>
+                    <button class="icon-btn" title="Descargar PDF firmado" onclick="descargarPDF('${doc.id}')" style="color: var(--success-color);">
+                        <i class="fa-solid fa-download"></i>
+                    </button>
+                    <button class="icon-btn" title="Eliminar registro" onclick="eliminarAuditoria('${doc.id}')" style="color: var(--danger-color);">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            historyList.appendChild(tr);
+        });
+    }, (error) => {
+        console.error("Error Historial:", error);
+    });
+}
+
+window.descargarUltimoPDF = function() {
+    if (ultimoPDFId) {
+        window.descargarPDF(ultimoPDFId);
+    } else {
+        alert("No hay documentos firmados para descargar.");
+    }
 }
 
 // ----------------------------------------------------
@@ -725,7 +794,7 @@ window.descargarPDF = async function(id) {
             // Textos legales (sólo se imprimen si es hoja nueva)
             page.drawText('DECLARACIÓN DE CONFORMIDAD', { x: marginLeft, y: currentY, size: 14, font: fontBold });
             currentY -= 40;
-            const parrafoLegal = 'Estoy consciente de haber leído y comprendido lo que estoy firmando \ncon total conformidad. Asimismo, manifiesto mi acuerdo con \nsu contenido y acepto su validación mediante mi firma digital \nelectrónica.';
+            const parrafoLegal = 'Estoy consciente de haber leído y comprendido lo que estoy firmando \ncon total conformidad. Asimismo, manifiesto mi acuerdo con \nsu contenido y acepto su validación mediante mi firma electrónica.';
             page.drawText(parrafoLegal, { x: marginLeft, y: currentY, size: 11, font: font, lineHeight: 16 });
             currentY -= 80;
             page.drawText('DATOS DE CONFIRMACIÓN', { x: marginLeft, y: currentY, size: 14, font: fontBold });

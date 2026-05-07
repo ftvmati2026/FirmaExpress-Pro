@@ -370,6 +370,23 @@
             .fake-pdf { padding: 1.25rem 1rem; }
             .success-stats { grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
             .stat-item { padding: 0.75rem 0.25rem; }
+            .btn-menu-header {
+                background: rgba(255, 255, 255, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                color: white;
+                padding: 0.4rem 0.8rem;
+                border-radius: 8px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+            .btn-menu-header:hover {
+                background: rgba(255, 255, 255, 0.2);
+            }
         }
     </style>
 </head>
@@ -380,7 +397,12 @@
             <i class="fa-solid fa-file-signature"></i>
             <span>FirmaExpress Pro</span>
         </div>
-        <div class="demo-badge">✨ DEMO INTERACTIVA</div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <button id="btnDescargarDemo" class="btn-menu-header" style="display: none;" onclick="descargarPDFDemo()">
+                <i class="fa-solid fa-file-arrow-down"></i> Descargar PDF
+            </button>
+            <div class="demo-badge">✨ DEMO INTERACTIVA</div>
+        </div>
     </div>
 
     <div class="demo-container">
@@ -501,7 +523,7 @@
                     <p>Imaginate enviar cualquier contrato por WhatsApp y recibirlo firmado en segundos.</p>
                     <ul>
                         <li><i class="fa-solid fa-check"></i> Documentos ilimitados</li>
-                        <li><i class="fa-solid fa-check"></i> Validez legal (Ley 25.506)</li>
+                        <li><i class="fa-solid fa-check"></i> Validez legal - Firma Electrónica (Ley 25.506)</li>
                         <li><i class="fa-solid fa-check"></i> Audit trail completo (IP, fecha, hora)</li>
                         <li><i class="fa-solid fa-check"></i> Tu cliente firma sin instalar nada</li>
                         <li><i class="fa-solid fa-check"></i> Desde $100 USD/mes</li>
@@ -606,8 +628,22 @@
                 document.getElementById('dot2').innerHTML = '<i class="fa-solid fa-check" style="font-size:0.75rem"></i>';
                 document.getElementById('line2').classList.add('done');
                 document.getElementById('dot3').classList.add('done');
+                
+                // Show download button in header
+                document.getElementById('btnDescargarDemo').style.display = 'flex';
+                
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }, 1500);
+        }
+
+        function descargarPDFDemo() {
+            // Simulated PDF for demo purposes
+            const link = document.createElement('a');
+            link.href = 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf';
+            link.download = 'FirmaExpress_Demo_Firmado.pdf';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
     </script>
 </body>

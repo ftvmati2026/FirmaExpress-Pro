@@ -67,16 +67,16 @@ He recopilado una selección inicial estratégica de los rubros solicitados.
 ## 3. Mensajes Potentes por Rubro (Copywriting)
 
 ### ⚖️ Para Estudios Jurídicos
-"Hola [Nombre] / Equipo de [Estudio], les escribo porque sé que en el derecho el tiempo es oro y las firmas físicas son un cuello de botella. Desarrollé **FirmaExpress Pro**, una plataforma para que sus clientes firmen escritos, contratos y poderes desde su celular en segundos, con validez legal y trazabilidad completa. Eliminen los traslados innecesarios y aceleren sus procesos. ¿Tienen 5 minutos mañana para que les muestre cómo inyectar su firma digital en cualquier PDF sin que el cliente tenga que instalar nada?"
+"Hola [Nombre] / Equipo de [Estudio], les escribo porque sé que en el derecho el tiempo es oro y las firmas físicas son un cuello de botella. Desarrollé **FirmaExpress Pro**, una plataforma para que sus clientes firmen escritos, contratos y poderes desde su celular en segundos, con validez legal y trazabilidad completa. Eliminen los traslados innecesarios y aceleren sus procesos. ¿Tienen 5 minutos mañana para que les muestre cómo inyectar su firma electrónica en cualquier PDF sin que el cliente tenga que instalar nada?"
 
 ### 📊 Para Estudios Contables
-"Hola [Nombre], ¿cuántas horas al mes pierden persiguiendo clientes para que firmen balances o declaraciones? Con **FirmaExpress Pro**, pueden enviar cualquier documento por WhatsApp y recibirlo firmado digitalmente en minutos. Todo queda auditado y organizado por empresa (tenant). Modernicen su estudio y denle un servicio premium a sus clientes. Avisame si querés que te mande un link de prueba para que veas lo fácil que es."
+"Hola [Nombre], ¿cuántas horas al mes pierden persiguiendo clientes para que firmen balances o declaraciones? Con **FirmaExpress Pro**, pueden enviar cualquier documento por WhatsApp y recibirlo firmado electrónicamente en minutos. Todo queda auditado y organizado por empresa (tenant). Modernicen su estudio y denle un servicio premium a sus clientes. Avisame si querés que te mande un link de prueba para que veas lo fácil que es."
 
 ### 🏫 Para Escuelas / Institutos
 "Estimados directivos de [Escuela], el manejo de autorizaciones de salida, legajos y contratos docentes en papel es costoso y lento. Les presento **FirmaExpress Pro**: una solución diseñada para que los padres firmen todo desde el celular, de forma segura y legal. Cero papel, cero burocracia. Me encantaría coordinar una breve reunión para mostrarles cómo pueden digitalizar toda su administración este mes."
 
 ### 🏥 Para Clínicas y Sanatorios
-"Hola [Nombre/Director], la digitalización de consentimientos informados y recetas ya no es opcional, es una necesidad de eficiencia y seguridad. Implementamos un sistema de Firma Digital Pro que permite a pacientes y médicos validar documentos de forma electrónica, cumpliendo con estándares de auditoría. Reduzcan el uso de papel y mejoren la experiencia del paciente. ¿Podemos conversar 10 minutos sobre cómo integrarlo en su flujo actual?"
+"Hola [Nombre/Director], la digitalización de consentimientos informados y recetas ya no es opcional, es una necesidad de eficiencia y seguridad. Implementamos un sistema de Firma Electrónica Pro que permite a pacientes y médicos validar documentos de forma electrónica, cumpliendo con estándares de auditoría. Reduzcan el uso de papel y mejoren la experiencia del paciente. ¿Podemos conversar 10 minutos sobre cómo integrarlo en su flujo actual?"
 
 ---
 
@@ -106,4 +106,4 @@ Podemos crear una función donde un paciente/padre escanee un QR en el mostrador
 
 ### D. Mensaje de Cierre 24h
 Después de la demo, mandá este mensaje:
-*"Mati de FirmaExpress aquí. Me gustó mucho nuestra charla. Como te comenté, tengo cupo para bonificar la implementación de $300 para 2 estudios más esta semana. Si arrancamos hoy, ya mañana tus clientes pueden estar firmando digitalmente. ¿Te sumo?"*
+*"Mati de FirmaExpress aquí. Me gustó mucho nuestra charla. Como te comenté, tengo cupo para bonificar la implementación de $300 para 2 estudios más esta semana. Si arrancamos hoy, ya mañana tus clientes pueden estar firmando electrónicamente. ¿Te sumo?"*

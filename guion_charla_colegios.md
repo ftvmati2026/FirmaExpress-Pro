@@ -32,7 +32,7 @@ Este es tu "mapa de ruta" para cuando te sientes frente a las autoridades de un 
 ---
 
 ## 3. Preguntas Frecuentes (Preparate para estas)
-*   **¿Es seguro?** "Más que el papel. El papel se puede adulterar, un PDF sellado digitalmente no."
+*   **¿Es seguro?** "Más que el papel. El papel se puede adulterar, un PDF sellado electrónicamente no."
 *   **¿Sirve para tribunales?** "Para escritos judiciales se usa el Token oficial, pero para la relación ESTUDIO-CLIENTE (honorarios, convenios, autorizaciones), esto es la solución definitiva."
 *   **¿Qué pasa si el cliente no sabe usar tecnología?** "Si sabe usar WhatsApp, sabe usar FirmaExpress. Son solo 3 clics."
 

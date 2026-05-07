@@ -36,6 +36,9 @@
                 <button id="btnPerfil" class="icon-btn" title="Mi Perfil / Cambiar Clave" style="display: none;" onclick="abrirModalPerfil()">
                     <i class="fa-solid fa-user-gear"></i>
                 </button>
+                <button id="btnDownloadPDF" class="icon-btn" title="Descargar PDF" style="display: none;" onclick="descargarUltimoPDF()">
+                    <i class="fa-solid fa-file-arrow-down"></i>
+                </button>
                 <button id="themeToggle" class="icon-btn" aria-label="Cambiar tema">
                     <i class="fa-solid fa-moon"></i>
                 </button>
@@ -88,7 +91,7 @@
 
         <section class="card upload-section">
             <h2><i class="fa-solid fa-cloud-arrow-up"></i> Enviar Documento a Firmar</h2>
-            <p class="subtitle">Subí el PDF original y elegí cómo querés que se aplique la firma digital.</p>
+            <p class="subtitle">Subí el PDF original y elegí cómo querés que se aplique la firma electrónica.</p>
             
             <form id="uploadForm" class="upload-form">
                 <div class="form-group file-upload-wrapper">
@@ -139,18 +142,18 @@
         </section>
 
         <section class="card list-section">
-            <h2><i class="fa-solid fa-list-check"></i> Documentos Gestionados <span id="pendingCounter" class="counter-badge" style="display: none;">0</span></h2>
-            
+            <h2><i class="fa-solid fa-clock-rotate-left"></i> Historial de Documentos Firmados <span id="historyCounter" class="counter-badge" style="display: none;">0</span></h2>
             <div class="table-container">
-                <table class="modern-table" id="auditsTable">
+                <table class="modern-table" id="historyTable">
                     <thead>
                         <tr>
                             <th>Archivo PDF</th>
-                            <th>Estado</th>
+                            <th>Fecha Firma</th>
+                            <th>Firmante</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
-                    <tbody id="auditsList">
+                    <tbody id="historyList">
                         <!-- Generado por JS -->
                     </tbody>
                 </table>
