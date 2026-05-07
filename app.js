@@ -15,7 +15,6 @@ let listenerHistorial = null;
 let ultimoPDFId = null;
 
 // Referencias a elementos del DOM
-const loginSection = document.getElementById('loginSection');
 const superAdminDashboard = document.getElementById('superAdminDashboard');
 const tenantDashboard = document.getElementById('tenantDashboard');
 const headerTitle = document.getElementById('headerTitle');
@@ -64,12 +63,10 @@ async function iniciarModoCliente(tenantUid) {
     tenantDashboard.style.display = 'block';
     btnPerfil.style.display = 'inline-flex';
     
-    // Si somos superadmin viendo a un cliente
     if (isSuperAdmin) {
         btnVolverAdmin.style.display = 'inline-flex';
     }
 
-    // Cargar datos de la empresa (branding)
     const doc = await db.collection('empresas').doc(tenantUid).get();
     if (doc.exists) {
         const data = doc.data();
@@ -100,7 +97,7 @@ function aplicarBranding(data) {
     }
 }
 
-function volverAlAdmin() {
+window.volverAlAdmin = function() {
     iniciarModoSuperAdmin();
 }
 
@@ -148,8 +145,65 @@ window.entrarComoEmpresa = (id, nombre) => {
     iniciarModoCliente(id);
 };
 
-// Modales y Formulario de Empresa (simplificado para brevedad, se asume que funciona)
-// ... (Aquí irían abrirModalEmpresa, cerrarModalEmpresa, guardarEmpresa, etc.)
+window.eliminarEmpresa = async (id) => {
+    if(confirm("¿Estás seguro de eliminar esta empresa y todos sus accesos?")) {
+        await db.collection('empresas').doc(id).delete();
+    }
+}
+
+// Modales de Empresa
+window.abrirModalEmpresa = async (id = null) => {
+    const modal = document.getElementById('modalEmpresa');
+    const form = document.getElementById('formNuevaEmpresa');
+    form.reset();
+    document.getElementById('editEmpresaId').value = id || '';
+    document.getElementById('modalEmpresaTitle').innerHTML = id ? '<i class="fa-solid fa-pen"></i> Editar Empresa' : '<i class="fa-solid fa-plus"></i> Nueva Empresa';
+    
+    if (id) {
+        const doc = await db.collection('empresas').doc(id).get();
+        const data = doc.data();
+        document.getElementById('empNombre').value = data.nombre;
+        document.getElementById('empWhatsapp').value = data.whatsapp || '';
+        document.getElementById('empEmail').value = data.email;
+        document.getElementById('empLogoUrl').value = data.logoUrl || '';
+        document.getElementById('empColor').value = data.color || '#2563eb';
+        document.getElementById('passGroup').style.display = 'none';
+        document.getElementById('editActions').style.display = 'block';
+    } else {
+        document.getElementById('passGroup').style.display = 'block';
+        document.getElementById('editActions').style.display = 'none';
+    }
+    modal.style.display = 'flex';
+}
+
+window.cerrarModalEmpresa = () => {
+    document.getElementById('modalEmpresa').style.display = 'none';
+}
+
+document.getElementById('formNuevaEmpresa').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('editEmpresaId').value;
+    const data = {
+        nombre: document.getElementById('empNombre').value,
+        whatsapp: document.getElementById('empWhatsapp').value,
+        email: document.getElementById('empEmail').value,
+        logoUrl: document.getElementById('empLogoUrl').value,
+        color: document.getElementById('empColor').value
+    };
+
+    try {
+        if (id) {
+            await db.collection('empresas').doc(id).update(data);
+        } else {
+            const pass = document.getElementById('empPassword').value;
+            // Nota: Aquí se asume que hay un endpoint o lógica de Firebase para crear usuarios si es necesario
+            await db.collection('empresas').add(data);
+        }
+        cerrarModalEmpresa();
+    } catch (err) {
+        alert("Error al guardar empresa: " + err.message);
+    }
+});
 
 // ----------------------------------------------------
 // 3. GESTIÓN DE DOCUMENTOS (Dashboard Cliente)
@@ -193,7 +247,7 @@ if (uploadForm) {
 
             const base64PDF = await fileToBase64(file);
 
-            const docRef = await db.collection('auditorias').add({
+            await db.collection('auditorias').add({
                 tenantId: currentTenantId,
                 modoFirma: modoFirmaElegido,
                 posicionFirma: posicionFirma,
@@ -204,7 +258,6 @@ if (uploadForm) {
                 firmaBase64: null
             });
             
-            const baseURL = window.location.href.substring(0, window.location.href.lastIndexOf("/") + 1);
             alert(`¡Documento guardado con éxito!`);
             uploadForm.reset();
             fileNameDisplay.textContent = 'Hacé clic para seleccionar el PDF';
@@ -241,7 +294,6 @@ function cargarAuditoriasDeEmpresa() {
             
         auditsList.innerHTML = '';
         let pendingCount = 0;
-        
         const docs = [];
         snapshot.forEach(doc => {
             const data = doc.data();
@@ -315,8 +367,12 @@ function cargarHistorialDeEmpresa(tenantUid) {
 
         if (docs.length === 0) {
             historyList.innerHTML = `<tr class="empty-state"><td colspan="4">No hay documentos firmados todavía.</td></tr>`;
+            if (btnDownloadHeader) btnDownloadHeader.style.display = 'none';
             return;
         }
+
+        ultimoPDFId = docs[0].id;
+        if (btnDownloadHeader) btnDownloadHeader.style.display = 'inline-flex';
 
         docs.forEach((data) => {
             const tr = document.createElement('tr');
@@ -356,6 +412,10 @@ window.eliminarAuditoria = async function(id) {
     }
 }
 
+window.descargarUltimoPDF = function() {
+    if (ultimoPDFId) window.descargarPDF(ultimoPDFId);
+}
+
 window.descargarPDF = async function(id) {
     try {
         const docSnapshot = await db.collection('auditorias').doc(id).get();
@@ -371,46 +431,32 @@ window.descargarPDF = async function(id) {
         const fontBold = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
         const fontNormal = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
         
-        if (data.modoFirma === 'misma_hoja') {
-            const pages = pdfDoc.getPages();
-            const page = pages[pages.length - 1];
-            const { width, height } = page.getSize();
-            
-            let x = 50;
-            let y = 50;
+        const pages = pdfDoc.getPages();
+        const page = data.modoFirma === 'hoja_nueva' ? pdfDoc.addPage(PDFLib.PageSizes.A4) : pages[pages.length - 1];
+        const { width, height } = page.getSize();
+        
+        let x = 50, y = 50;
+        if (data.modoFirma !== 'hoja_nueva') {
             const pos = data.posicionFirma || 'abajo_izquierda';
             if (pos.endsWith('derecha')) x = width - 210;
             if (pos.endsWith('centro')) x = (width - 160) / 2;
             if (pos.startsWith('arriba')) y = height - 150;
             if (pos.startsWith('centro')) y = height / 2;
-
-            if (base64Firma) {
-                const signatureImage = await pdfDoc.embedPng(base64Firma);
-                page.drawImage(signatureImage, { x: x, y: y, width: 160, height: 80 });
-            }
-            
-            page.drawText(`Firmante: ${data.afiliadoNombre || 'N/A'}`, { x: x, y: y - 15, size: 9, font: fontBold });
-            page.drawText(`DNI: ${data.afiliadoDNI || '---'}`, { x: x, y: y - 25, size: 8, font: fontNormal });
-            page.drawText(`Fecha: ${data.fechaFirma ? data.fechaFirma.toDate().toLocaleString('es-AR') : new Date().toLocaleString('es-AR')}`, { x: x, y: y - 35, size: 8, font: fontNormal });
-
         } else {
-            const page = pdfDoc.addPage(PDFLib.PageSizes.A4);
-            const { height } = page.getSize();
-            let y = height - 50;
-            
+            y = height - 50;
             page.drawText('CONSTANCIA DE FIRMA ELECTRÓNICA', { x: 50, y: y, size: 14, font: fontBold });
             y -= 40;
-            
-            if (base64Firma) {
-                const signatureImage = await pdfDoc.embedPng(base64Firma);
-                page.drawImage(signatureImage, { x: 50, y: y - 100, width: 200, height: 100 });
-                y -= 120;
-            }
-            
-            page.drawText(`Nombre: ${data.afiliadoNombre || 'N/A'}`, { x: 50, y: y, size: 12, font: fontBold });
-            page.drawText(`DNI: ${data.afiliadoDNI || '---'}`, { x: 50, y: y - 20, size: 12, font: fontNormal });
-            page.drawText(`Fecha: ${data.fechaFirma ? data.fechaFirma.toDate().toLocaleString('es-AR') : new Date().toLocaleString('es-AR')}`, { x: 50, y: y - 40, size: 12, font: fontNormal });
         }
+
+        if (base64Firma) {
+            const signatureImage = await pdfDoc.embedPng(base64Firma);
+            page.drawImage(signatureImage, { x: x, y: y, width: 160, height: 80 });
+        }
+        
+        const textY = data.modoFirma === 'hoja_nueva' ? y - 100 : y - 15;
+        page.drawText(`Firmante: ${data.afiliadoNombre || 'N/A'}`, { x: x, y: textY, size: 9, font: fontBold });
+        page.drawText(`DNI: ${data.afiliadoDNI || '---'}`, { x: x, y: textY - 10, size: 8, font: fontNormal });
+        page.drawText(`Fecha: ${data.fechaFirma ? data.fechaFirma.toDate().toLocaleString('es-AR') : new Date().toLocaleString('es-AR')}`, { x: x, y: textY - 20, size: 8, font: fontNormal });
 
         const pdfBytes = await pdfDoc.save();
         const blob = new Blob([pdfBytes], { type: 'application/pdf' });
@@ -425,7 +471,19 @@ window.descargarPDF = async function(id) {
     }
 }
 
-// ----------------------------------------------------
-// 5. TEMA Y MODALES (Resto de la lógica)
-// ----------------------------------------------------
-// ... (Aquí iría la lógica de temas y modales que ya tenías)
+// 5. TEMA CLARO/OSCURO
+const themeToggle = document.getElementById('themeToggle');
+const savedTheme = localStorage.getItem('theme') || 'light';
+document.body.setAttribute('data-theme', savedTheme);
+document.documentElement.setAttribute('data-theme', savedTheme);
+
+if(themeToggle){
+    themeToggle.addEventListener('click', () => {
+        const currentTheme = document.body.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        document.body.setAttribute('data-theme', newTheme);
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        themeToggle.innerHTML = newTheme === 'dark' ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+    });
+}
