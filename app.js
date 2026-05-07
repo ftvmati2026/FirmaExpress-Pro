@@ -484,7 +484,12 @@ if (uploadForm) {
         const file = pdfInput.files[0];
         
         // Seguridad vital: no subir si no sabemos de que empresa es
-        if (!file || !currentTenantId) return; 
+        if (!currentTenantId) {
+            alert("Error: No se detectó el ID de la empresa. Por favor, volvé a entrar al panel.");
+            return;
+        }
+
+        console.log("Subiendo documento para tenantId:", currentTenantId);
 
         // Leer que eligió el usuario para ESTE documento
         const modoFirmaElegido = document.querySelector('input[name="modoFirma"]:checked').value;
@@ -508,7 +513,7 @@ if (uploadForm) {
                 firmaBase64: null
             });
             
-            const baseURL = window.location.href.split('index.html')[0];
+            const baseURL = window.location.href.substring(0, window.location.href.lastIndexOf("/") + 1);
             const linkUnico = `${baseURL}firmar.html?id=${docRef.id}`;
             
             alert(`¡Documento guardado con éxito!\n\nPodés copiar el link haciendo clic en el ícono de WhatsApp en la tabla de abajo.`);
@@ -530,108 +535,115 @@ if (uploadForm) {
 // Listar los documentos de LA EMPRESA ACTUAL SOLAMENTE
 function cargarAuditoriasDeEmpresa() {
     const auditsList = document.getElementById('auditsList');
-    if (!auditsList || !currentTenantId) return;
+    const historyList = document.getElementById('historyList');
+    if (!auditsList || !historyList || !currentTenantId) return;
     
     if(listenerAuditorias) listenerAuditorias(); // Resetear viejo
     
     const pendingCounter = document.getElementById('pendingCounter');
 
-    // FILTRO VITAL: where("tenantId", "==", currentTenantId)
+    // MODO ZERO-CONFIG: Ordenamos en memoria para que no tengas que crear índices en Firebase
     listenerAuditorias = db.collection('auditorias')
         .where("tenantId", "==", currentTenantId)
-        .orderBy('fechaCreacion', 'desc')
         .onSnapshot((snapshot) => {
             
         auditsList.innerHTML = '';
+        historyList.innerHTML = '';
         let pendingCount = 0;
+        let hasSigned = false;
         
         if (snapshot.empty) {
             auditsList.innerHTML = `<tr class="empty-state"><td colspan="3">Aún no procesaste ningún documento.</td></tr>`;
+            historyList.innerHTML = `<tr class="empty-state"><td colspan="4">No hay historial disponible.</td></tr>`;
             if (pendingCounter) pendingCounter.style.display = 'none';
             return;
         }
 
-        snapshot.forEach((doc) => {
-            const data = doc.data();
-            const esFirmado = data.estado === "Firmado";
-            const baseURL = window.location.href.split('index.html')[0];
-            const linkACompartir = `${baseURL}firmar.html?id=${doc.id}`;
+        // Convertimos a array y ordenamos por fecha de creación (descendente)
+        const docs = [];
+        snapshot.forEach(doc => docs.push({ id: doc.id, ...doc.data() }));
+        
+        docs.sort((a, b) => {
+            const dateA = a.fechaCreacion ? (a.fechaCreacion.toMillis ? a.fechaCreacion.toMillis() : a.fechaCreacion) : Date.now();
+            const dateB = b.fechaCreacion ? (b.fechaCreacion.toMillis ? b.fechaCreacion.toMillis() : b.fechaCreacion) : Date.now();
+            return dateB - dateA;
+        });
 
+        docs.forEach((data) => {
+            const esFirmado = data.estado === "Firmado";
             const tr = document.createElement('tr');
-            const badgeClass = esFirmado ? 'badge-signed' : 'badge-pending';
             
-            // Etiqueta visual de si es Misma Hoja o Hoja Anexa
-            let etiquetaFirma = data.modoFirma === 'misma_hoja' ? 'Misma Hoja' : 'Anexa';
-            let infoExtra = '';
-            
-            if (!esFirmado) {
+            if (esFirmado) {
+                hasSigned = true;
+                const fechaF = data.fechaFirma ? (data.fechaFirma.toDate ? data.fechaFirma.toDate().toLocaleString('es-AR') : new Date(data.fechaFirma).toLocaleString('es-AR')) : 'Recién';
+                tr.innerHTML = `
+                    <td><strong>${data.nombreArchivo}</strong></td>
+                    <td style="font-size: 0.85rem; color: var(--text-secondary);"><i class="fa-regular fa-calendar-check"></i> ${fechaF}</td>
+                    <td><span class="badge badge-signed"><i class="fa-solid fa-user"></i> ${data.afiliadoNombre || 'Firmante'}</span></td>
+                    <td class="td-actions">
+                        <button class="icon-btn" title="Descargar PDF firmado" onclick="descargarPDF('${data.id}')" style="color: var(--success-color);">
+                            <i class="fa-solid fa-download"></i>
+                        </button>
+                        <button class="icon-btn" title="Eliminar registro" onclick="eliminarAuditoria('${data.id}')" style="color: var(--danger-color);">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                historyList.appendChild(tr);
+            } else {
                 pendingCount++;
+                const baseURL = window.location.href.substring(0, window.location.href.lastIndexOf("/") + 1);
+                const linkACompartir = `${baseURL}firmar.html?id=${data.id}`;
+                
+                let infoExtra = '';
                 if (data.fechaCreacion) {
                     try {
-                        const fecha = data.fechaCreacion.toDate();
+                        const fecha = data.fechaCreacion.toDate ? data.fechaCreacion.toDate() : new Date(data.fechaCreacion);
                         const hoy = new Date();
                         const diffTime = Math.abs(hoy - fecha);
                         const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-                        const fechaLegible = fecha.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
                         const diasTexto = diffDays === 0 ? 'Hoy' : `Hace ${diffDays} ${diffDays === 1 ? 'día' : 'días'}`;
-
-                        infoExtra += `
-                            <span class="status-date" style="display:block; font-size:0.8rem; margin-top:6px; color:var(--text-secondary);"><i class="fa-regular fa-calendar"></i> ${fechaLegible}</span>
-                            <span class="status-age" style="display:block; font-size:0.8rem; color:var(--warning-color); margin-top:2px;"><i class="fa-regular fa-clock"></i> ${diasTexto}</span>
-                        `;
-                    } catch (e) {
-                        console.warn(e);
-                    }
+                        infoExtra = `<span class="status-age" style="display:block; font-size:0.75rem; color:var(--warning-color); margin-top:4px;"><i class="fa-regular fa-clock"></i> ${diasTexto}</span>`;
+                    } catch (e) {}
                 }
-                infoExtra += `<div style="font-size:0.8rem; margin-top:4px; font-weight: 500; color:var(--text-secondary);"><i class="fa-solid fa-file-invoice"></i> Tipo: ${etiquetaFirma}</div>`;
-            }
-            
-            let estadoHtml = `<div class="status-info-container"><span class="badge ${badgeClass}">${data.estado}</span>${infoExtra}</div>`;
-            
-            let botonesAccion = '';
-            if (esFirmado) {
-                botonesAccion = `
-                    <button class="icon-btn" title="Descargar PDF firmado" onclick="descargarPDF('${doc.id}')" style="color: var(--success-color);">
-                        <i class="fa-solid fa-download"></i>
-                    </button>
-                    <button class="icon-btn" title="Eliminar registro" onclick="eliminarAuditoria('${doc.id}')" style="color: var(--danger-color);">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                `;
-            } else {
-                botonesAccion = `
-                    <button class="icon-btn" title="Copiar link para enviar" onclick="copiarLink('${linkACompartir}')" style="color: var(--primary-color);">
-                        <i class="fa-brands fa-whatsapp"></i>
-                    </button>
-                    <button class="icon-btn" title="Eliminar registro" onclick="eliminarAuditoria('${doc.id}')" style="color: var(--danger-color);">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                `;
-            }
 
-            tr.innerHTML = `
-                <td><strong>${data.nombreArchivo}</strong></td>
-                <td>${estadoHtml}</td>
-                <td class="td-actions">${botonesAccion}</td>
-            `;
-            auditsList.appendChild(tr);
+                tr.innerHTML = `
+                    <td><strong>${data.nombreArchivo}</strong></td>
+                    <td>
+                        <span class="badge badge-pending">Pendiente</span>
+                        ${infoExtra}
+                        <div style="font-size:0.75rem; margin-top:4px; color:var(--text-secondary); font-weight:500;">
+                            <i class="fa-solid fa-file-invoice"></i> ${data.modoFirma === 'misma_hoja' ? 'Misma Hoja' : 'Hoja Anexa'}
+                        </div>
+                    </td>
+                    <td class="td-actions">
+                        <button class="icon-btn" title="Copiar link para enviar" onclick="copiarLink('${linkACompartir}')" style="color: var(--primary-color);">
+                            <i class="fa-brands fa-whatsapp"></i>
+                        </button>
+                        <button class="icon-btn" title="Eliminar registro" onclick="eliminarAuditoria('${data.id}')" style="color: var(--danger-color);">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                auditsList.appendChild(tr);
+            }
         });
 
+        // Estados vacíos refinados
+        if (pendingCount === 0) {
+            auditsList.innerHTML = `<tr class="empty-state"><td colspan="3">No hay documentos pendientes.</td></tr>`;
+        }
+        if (!hasSigned) {
+            historyList.innerHTML = `<tr class="empty-state"><td colspan="4">No hay historial disponible.</td></tr>`;
+        }
+
         if (pendingCounter) {
-            if (pendingCount > 0) {
-                pendingCounter.textContent = pendingCount;
-                pendingCounter.style.display = 'inline-block';
-            } else {
-                pendingCounter.style.display = 'none';
-            }
+            pendingCounter.textContent = pendingCount;
+            pendingCounter.style.display = pendingCount > 0 ? 'inline-block' : 'none';
         }
     }, (error) => {
         console.error("Error BD:", error);
-        if (error.message.includes('requires an index')) {
-            // FIREBASE REQUIERE UN INDICE LA PRIMERA VEZ QUE HACEMOS WHERE + ORDERBY
-            auditsList.innerHTML = `<tr><td colspan="3"><div style="background:var(--danger-color); color:white; padding:15px; border-radius:8px; text-align:center;"><b>ALERTA TÉCNICA (SOLO APARECE UNA VEZ):</b><br>Falta crear un índice en Firebase.<br>Presioná F12, andá a 'Console' y hacé clic en el link azul para crearlo.</div></td></tr>`;
-        }
+        auditsList.innerHTML = `<tr><td colspan="3"><div class="error-state"><i class="fa-solid fa-triangle-exclamation"></i><div class="error-message-text">Error de conexión con la base de datos.</div></div></td></tr>`;
     });
 }
 
@@ -739,9 +751,9 @@ window.descargarPDF = async function(id) {
         // Ajustamos tamaños dependiendo de qué modo es (más chico si es misma_hoja)
         const textS = data.modoFirma === 'misma_hoja' ? 10 : 12;
         
-        page.drawText(`Firmante: ${data.afiliadoNombre}`, { x: startX, y: currentY, size: textS, font: fontBold });
+        page.drawText(`Firmante: ${data.afiliadoNombre || 'No especificado'}`, { x: startX, y: currentY, size: textS, font: fontBold });
         currentY -= 20;
-        page.drawText(`DNI: ${data.afiliadoDNI}`, { x: startX, y: currentY, size: textS, font: fontBold });
+        page.drawText(`DNI: ${data.afiliadoDNI || 'No especificado'}`, { x: startX, y: currentY, size: textS, font: fontBold });
         currentY -= 30;
         
         // Inyectar imagen

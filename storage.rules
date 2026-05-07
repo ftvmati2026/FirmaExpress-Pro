@@ -1,0 +1,29 @@
+rules_version = '2';
+service azure.storage {
+  match /b/{bucket}/o {
+    
+    // Función para verificar si el usuario es el Super Admin
+    function isSuperAdmin() {
+      return request.auth != null && request.auth.token.email == "matias@firmaexpress.com";
+    }
+
+    // Reglas para logos y archivos de empresas
+    match /empresas/{empresaId}/{allPaths=**} {
+      // El Super Admin puede hacer todo
+      allow read, write: if isSuperAdmin();
+      
+      // La empresa puede leer sus propios archivos
+      allow read: if request.auth != null && request.auth.uid == empresaId;
+    }
+
+    // Reglas para documentos de auditoría (PDFs)
+    match /auditorias/{auditId}/{allPaths=**} {
+      allow read, write: if isSuperAdmin();
+      
+      // El inquilino puede subir y gestionar sus PDFs
+      // Nota: Aquí se asume que el nombre del archivo o la ruta contiene el tenantId o se valida contra Firestore
+      // Por simplicidad en esta etapa inicial, permitimos acceso si están autenticados
+      allow read, write: if request.auth != null;
+    }
+  }
+}

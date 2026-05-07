@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Función para verificar si el usuario es el Super Admin
+    function isSuperAdmin() {
+      return request.auth != null && request.auth.token.email == "matias@firmaexpress.com";
+    }
+
+    // Reglas para la colección de Empresas (Clientes)
+    match /empresas/{empresaId} {
+      // El Super Admin puede hacer todo
+      allow read, write: if isSuperAdmin();
+      
+      // Cada empresa puede leer sus propios datos
+      allow read: if request.auth != null && request.auth.uid == empresaId;
+      
+      // Las empresas no pueden editar sus datos comerciales críticos (nombre, whatsapp, activa)
+      // pero podríamos permitirles editar el logo o color si quisiéramos.
+      // Por ahora, solo lectura para ellos.
+    }
+
+    // Reglas para la colección de Auditorías (Documentos)
+    match /auditorias/{auditId} {
+      // El Super Admin puede hacer todo
+      allow read, write: if isSuperAdmin();
+      
+      // Los inquilinos (empresas) pueden gestionar sus propias auditorías
+      allow create: if request.auth != null && request.resource.data.tenantId == request.auth.uid;
+      allow read, update, delete: if request.auth != null && resource.data.tenantId == request.auth.uid;
+
+      // EL PROCESO DE FIRMA (Público con el link único)
+      // Permite leer si aún no está firmado, y actualizar para firmar.
+      allow get: if resource.data.estado == 'Pendiente';
+      // Permitir al cliente firmar (solo pasar de Pendiente a Firmado)
+      allow update: if resource.data.estado == 'Pendiente' 
+                    && request.resource.data.estado == 'Firmado';
+    }
+  }
+}
