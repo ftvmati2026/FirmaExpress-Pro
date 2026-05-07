@@ -1,4 +1,4 @@
-/* 
+/*
     FirmaExpress Pro - SaaS Logic
     Desarrollado para Matías Gómez
 */
@@ -14,13 +14,17 @@ const firebaseConfig = {
 };
 
 // Iniciar Firebase
-firebase.initializeApp(firebaseConfig);
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+
 const db = firebase.firestore();
 const auth = firebase.auth();
 const SUPER_ADMIN_EMAIL = "matias@firmaexpress.com";
 
 let currentTenantId = null;
 let isSuperAdmin = false;
+let listenerEmpresas = null;
 let listenerAuditorias = null;
 let listenerHistorial = null;
 let ultimoPDFId = null;
@@ -33,6 +37,7 @@ const userEmailDisplay = document.getElementById('userEmailDisplay');
 const btnLogout = document.getElementById('btnLogout');
 const btnVolverAdmin = document.getElementById('btnVolverAdmin');
 const btnDownloadHeader = document.getElementById('btnDownloadPDF');
+const btnVaciarHistorial = document.getElementById('btnVaciarHistorial');
 
 // ----------------------------------------------------
 // 1. AUTENTICACIÓN Y FLUJO INICIAL
@@ -54,36 +59,106 @@ auth.onAuthStateChanged(async (user) => {
     }
 });
 
-if(btnLogout) btnLogout.addEventListener('click', () => { auth.signOut(); });
+if (btnLogout) {
+    btnLogout.addEventListener('click', () => {
+        auth.signOut();
+    });
+}
 
 function iniciarModoSuperAdmin() {
-    if(superAdminDashboard) superAdminDashboard.style.display = 'block';
-    if(tenantDashboard) tenantDashboard.style.display = 'none';
-    if(btnVolverAdmin) btnVolverAdmin.style.display = 'none';
-    headerTitle.textContent = "Admin - FirmaExpress Pro";
+    detenerListenersCliente();
+    if (superAdminDashboard) superAdminDashboard.style.display = 'block';
+    if (tenantDashboard) tenantDashboard.style.display = 'none';
+    if (btnVolverAdmin) btnVolverAdmin.style.display = 'none';
+    if (btnDownloadHeader) btnDownloadHeader.style.display = 'none';
+    if (btnVaciarHistorial) btnVaciarHistorial.style.display = 'none';
+    if (headerTitle) headerTitle.textContent = "Admin - FirmaExpress Pro";
     currentTenantId = null;
+    restaurarBranding();
     cargarEmpresas();
 }
 
 async function iniciarModoCliente(tenantUid) {
-    if(superAdminDashboard) superAdminDashboard.style.display = 'none';
-    if(tenantDashboard) tenantDashboard.style.display = 'block';
-    
+    if (superAdminDashboard) superAdminDashboard.style.display = 'none';
+    if (tenantDashboard) tenantDashboard.style.display = 'block';
+
     if (isSuperAdmin && btnVolverAdmin) {
         btnVolverAdmin.style.display = 'inline-flex';
     }
 
-    const doc = await db.collection('empresas').doc(tenantUid).get();
-    if (doc.exists) {
-        const data = doc.data();
-        headerTitle.textContent = `Gestionando: ${data.nombre || 'Empresa'}`;
+    currentTenantId = tenantUid;
+
+    try {
+        const doc = await db.collection('empresas').doc(tenantUid).get();
+        if (doc.exists) {
+            const data = doc.data();
+            headerTitle.textContent = `Gestionando: ${data.nombre || 'Empresa'}`;
+            aplicarBranding(data);
+        } else {
+            headerTitle.textContent = 'Gestionando: Empresa';
+            restaurarBranding();
+        }
+    } catch (error) {
+        console.error(error);
+        headerTitle.textContent = 'Gestionando: Empresa';
     }
 
     cargarAuditoriasDeEmpresa();
     cargarHistorialDeEmpresa(tenantUid);
 }
 
-window.volverAlAdmin = function() { iniciarModoSuperAdmin(); }
+function detenerListenersCliente() {
+    if (listenerAuditorias) {
+        listenerAuditorias();
+        listenerAuditorias = null;
+    }
+    if (listenerHistorial) {
+        listenerHistorial();
+        listenerHistorial = null;
+    }
+}
+
+function aplicarBranding(data) {
+    const root = document.documentElement;
+    if (data.color) {
+        root.style.setProperty('--primary-color', data.color);
+        root.style.setProperty('--primary-hover', data.color);
+    }
+
+    const logoImg = document.getElementById('customLogo');
+    const defaultIcon = document.getElementById('defaultLogoIcon');
+    if (!logoImg || !defaultIcon) return;
+
+    if (data.logoUrl) {
+        logoImg.src = data.logoUrl;
+        logoImg.style.display = 'block';
+        defaultIcon.style.display = 'none';
+    } else {
+        logoImg.style.display = 'none';
+        defaultIcon.style.display = 'block';
+    }
+}
+
+function restaurarBranding() {
+    const root = document.documentElement;
+    root.style.removeProperty('--primary-color');
+    root.style.removeProperty('--primary-hover');
+
+    const logoImg = document.getElementById('customLogo');
+    const defaultIcon = document.getElementById('defaultLogoIcon');
+    if (logoImg) logoImg.style.display = 'none';
+    if (defaultIcon) defaultIcon.style.display = 'block';
+}
+
+window.volverAlAdmin = function() {
+    iniciarModoSuperAdmin();
+};
+
+window.abrirModalPerfil = function() {
+    if (currentTenantId && isSuperAdmin) {
+        abrirModalEmpresa(currentTenantId);
+    }
+};
 
 // ----------------------------------------------------
 // 2. GESTIÓN DE EMPRESAS (Solo Admin)
@@ -91,37 +166,204 @@ window.volverAlAdmin = function() { iniciarModoSuperAdmin(); }
 
 async function cargarEmpresas() {
     const list = document.getElementById('empresasList');
-    if(!list) return;
-    db.collection('empresas').onSnapshot((snapshot) => {
+    if (!list) return;
+
+    if (listenerEmpresas) listenerEmpresas();
+
+    listenerEmpresas = db.collection('empresas').onSnapshot((snapshot) => {
         list.innerHTML = '';
+
+        if (snapshot.empty) {
+            list.innerHTML = `<tr><td colspan="3">No hay empresas registradas.</td></tr>`;
+            return;
+        }
+
         snapshot.forEach((doc) => {
             const data = doc.data();
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><strong>${data.nombre}</strong><br><small>${data.email}</small></td>
-                <td>${data.whatsapp || '---'}</td>
+                <td>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <img src="${escapeHtml(data.logoUrl || '')}" style="width:30px; height:30px; border-radius:4px; object-fit:contain; background:#f0f0f0;" onerror="this.style.display='none'">
+                        <div>
+                            <strong>${escapeHtml(data.nombre || 'Sin nombre')}</strong><br>
+                            <small style="color:var(--text-secondary)">${escapeHtml(data.whatsapp || 'Sin WhatsApp')}</small>
+                        </div>
+                    </div>
+                </td>
+                <td>${escapeHtml(data.email || 'Sin email')}</td>
                 <td class="td-actions">
-                    <button class="icon-btn" onclick="entrarComoEmpresa('${doc.id}', '${data.nombre}')" style="color: var(--primary-color);">
+                    <button class="icon-btn" title="Gestionar Documentos" onclick="entrarComoEmpresa('${doc.id}')" style="color: var(--primary-color);">
                         <i class="fa-solid fa-right-to-bracket"></i>
                     </button>
-                    <button class="icon-btn" onclick="eliminarEmpresa('${doc.id}')" style="color: var(--danger-color);">
+                    <button class="icon-btn" title="Editar" onclick="abrirModalEmpresa('${doc.id}')" style="color: var(--text-secondary);">
+                        <i class="fa-solid fa-pen"></i>
+                    </button>
+                    <button class="icon-btn" title="Eliminar" onclick="eliminarEmpresa('${doc.id}')" style="color: var(--danger-color);">
                         <i class="fa-solid fa-trash"></i>
                     </button>
                 </td>
             `;
             list.appendChild(tr);
         });
+    }, (error) => {
+        console.error(error);
+        list.innerHTML = `<tr><td colspan="3">Error al cargar empresas.</td></tr>`;
     });
 }
 
-window.entrarComoEmpresa = (id, nombre) => {
+window.entrarComoEmpresa = (id) => {
     currentTenantId = id;
     iniciarModoCliente(id);
 };
 
 window.eliminarEmpresa = async (id) => {
-    if(confirm("¿Eliminar empresa?")) await db.collection('empresas').doc(id).delete();
+    if (!confirm("¿Eliminar empresa? Esto quita la empresa del panel, pero no borra el usuario de acceso en Firebase Auth.")) return;
+
+    try {
+        await db.collection('empresas').doc(id).delete();
+    } catch (error) {
+        console.error(error);
+        alert("No se pudo eliminar la empresa.");
+    }
+};
+
+window.abrirModalEmpresa = async (id = null) => {
+    const modal = document.getElementById('modalEmpresa');
+    const form = document.getElementById('formNuevaEmpresa');
+    const passwordInput = document.getElementById('empPassword');
+    if (!modal || !form) return;
+
+    form.reset();
+    document.getElementById('editEmpresaId').value = id || '';
+    document.getElementById('modalEmpresaTitle').innerHTML = id ? '<i class="fa-solid fa-pen"></i> Editar Empresa' : '<i class="fa-solid fa-plus"></i> Nueva Empresa';
+
+    if (id) {
+        try {
+            const doc = await db.collection('empresas').doc(id).get();
+            if (!doc.exists) {
+                alert("La empresa no existe.");
+                return;
+            }
+            const data = doc.data();
+            document.getElementById('empNombre').value = data.nombre || '';
+            document.getElementById('empWhatsapp').value = data.whatsapp || '';
+            document.getElementById('empEmail').value = data.email || '';
+            document.getElementById('empLogoUrl').value = data.logoUrl || '';
+            document.getElementById('empColor').value = data.color || '#2563eb';
+            document.getElementById('passGroup').style.display = 'none';
+            document.getElementById('editActions').style.display = 'block';
+            if (passwordInput) passwordInput.required = false;
+        } catch (error) {
+            console.error(error);
+            alert("No se pudo abrir la empresa.");
+            return;
+        }
+    } else {
+        document.getElementById('passGroup').style.display = 'block';
+        document.getElementById('editActions').style.display = 'none';
+        if (passwordInput) passwordInput.required = true;
+    }
+
+    modal.style.display = 'flex';
+};
+
+window.cerrarModalEmpresa = () => {
+    const modal = document.getElementById('modalEmpresa');
+    if (modal) modal.style.display = 'none';
+};
+
+const formNuevaEmpresa = document.getElementById('formNuevaEmpresa');
+if (formNuevaEmpresa) {
+    formNuevaEmpresa.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const id = document.getElementById('editEmpresaId').value;
+        const submitButton = formNuevaEmpresa.querySelector('button[type="submit"]');
+        const data = {
+            nombre: document.getElementById('empNombre').value.trim(),
+            whatsapp: document.getElementById('empWhatsapp').value.trim(),
+            email: document.getElementById('empEmail').value.trim(),
+            logoUrl: document.getElementById('empLogoUrl').value.trim(),
+            color: document.getElementById('empColor').value || '#2563eb',
+            activa: true
+        };
+
+        if (!data.nombre || !data.email) {
+            alert("Completá el nombre y el email de la empresa.");
+            return;
+        }
+
+        try {
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+            }
+
+            if (id) {
+                data.actualizadoEn = firebase.firestore.FieldValue.serverTimestamp();
+                await db.collection('empresas').doc(id).update(data);
+            } else {
+                const pass = document.getElementById('empPassword').value;
+                if (!pass || pass.length < 6) {
+                    alert("La clave debe tener al menos 6 caracteres.");
+                    return;
+                }
+
+                const userCredential = await crearUsuarioEmpresa(data.email, pass);
+                await db.collection('empresas').doc(userCredential.user.uid).set({
+                    ...data,
+                    uid: userCredential.user.uid,
+                    creadoEn: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
+
+            cerrarModalEmpresa();
+        } catch (error) {
+            console.error(error);
+            alert("Error al guardar empresa: " + friendlyFirebaseError(error));
+        } finally {
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.innerHTML = 'Guardar';
+            }
+        }
+    });
 }
+
+async function crearUsuarioEmpresa(email, password) {
+    const secondaryName = `empresa-create-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const secondaryApp = firebase.initializeApp(firebaseConfig, secondaryName);
+    const secondaryAuth = firebase.auth(secondaryApp);
+
+    try {
+        const credential = await secondaryAuth.createUserWithEmailAndPassword(email, password);
+        const user = {
+            uid: credential.user.uid,
+            email: credential.user.email
+        };
+        await secondaryAuth.signOut();
+        return { user };
+    } finally {
+        await secondaryApp.delete();
+    }
+}
+
+window.enviarResetClave = async () => {
+    const email = document.getElementById('empEmail')?.value.trim();
+    if (!email) {
+        alert("Primero cargá el email de la empresa.");
+        return;
+    }
+
+    try {
+        await auth.sendPasswordResetEmail(email);
+        alert("Se envió el email para reestablecer la clave.");
+    } catch (error) {
+        console.error(error);
+        alert("No se pudo enviar el email de recuperación: " + friendlyFirebaseError(error));
+    }
+};
 
 // ----------------------------------------------------
 // 3. GESTIÓN DE DOCUMENTOS
@@ -137,6 +379,8 @@ if (pdfInput) {
         const file = e.target.files[0];
         if (file) {
             fileNameDisplay.textContent = file.name;
+            fileNameDisplay.style.color = 'var(--primary-color)';
+            fileNameDisplay.style.fontWeight = 'bold';
             btnUpload.disabled = false;
         } else {
             fileNameDisplay.textContent = 'Seleccionar PDF';
@@ -149,33 +393,47 @@ if (uploadForm) {
     uploadForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const file = pdfInput.files[0];
-        if (!currentTenantId) return;
 
-        const modoFirmaElegido = document.querySelector('input[name="modoFirma"]:checked').value;
-        const posicionFirma = document.getElementById('posicionFirma') ? document.getElementById('posicionFirma').value : 'abajo_derecha';
+        if (!currentTenantId) {
+            alert("Error: No se detectó la empresa.");
+            return;
+        }
+        if (!file) {
+            alert("Seleccioná un PDF.");
+            return;
+        }
+
+        const modoFirmaElegido = document.querySelector('input[name="modoFirma"]:checked')?.value || 'misma_hoja';
+        const posicionFirma = document.getElementById('posicionFirma')?.value || 'abajo_derecha';
 
         try {
             btnUpload.disabled = true;
             btnUpload.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Subiendo...';
+
             const base64PDF = await fileToBase64(file);
+
             await db.collection('auditorias').add({
                 tenantId: currentTenantId,
                 modoFirma: modoFirmaElegido,
-                posicionFirma: posicionFirma,
+                posicionFirma,
                 nombreArchivo: file.name,
                 pdfBase64: base64PDF,
                 estado: 'Pendiente',
                 fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
                 firmaBase64: null
             });
-            alert("¡Subido!");
+
+            alert("¡Documento guardado con éxito!");
             uploadForm.reset();
             fileNameDisplay.textContent = 'Seleccionar PDF';
+            fileNameDisplay.style.color = '';
+            fileNameDisplay.style.fontWeight = '';
             btnUpload.disabled = true;
         } catch (error) {
-            alert('Error al subir.');
+            console.error(error);
+            alert('Error al subir el archivo: ' + friendlyFirebaseError(error));
         } finally {
-            btnUpload.innerHTML = '<i class="fa-solid fa-link"></i> Generar Link';
+            btnUpload.innerHTML = '<i class="fa-solid fa-link"></i> Generar Link para Cliente';
         }
     });
 }
@@ -192,89 +450,124 @@ function fileToBase64(file) {
 function cargarAuditoriasDeEmpresa() {
     const auditsList = document.getElementById('auditsList');
     if (!auditsList || !currentTenantId) return;
-    
-    if(listenerAuditorias) listenerAuditorias();
+
+    if (listenerAuditorias) listenerAuditorias();
     const pendingCounter = document.getElementById('pendingCounter');
 
     listenerAuditorias = db.collection('auditorias')
         .where("tenantId", "==", currentTenantId)
         .onSnapshot((snapshot) => {
-            
-        auditsList.innerHTML = '';
-        let pendingCount = 0;
-        const docs = [];
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            if (data.estado === 'Pendiente') {
-                docs.push({ id: doc.id, ...data });
-                pendingCount++;
+            auditsList.innerHTML = '';
+            let pendingCount = 0;
+            const docs = [];
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.estado === 'Pendiente') {
+                    docs.push({ id: doc.id, ...data });
+                    pendingCount++;
+                }
+            });
+
+            docs.sort((a, b) => getTime(b.fechaCreacion) - getTime(a.fechaCreacion));
+
+            if (docs.length === 0) {
+                auditsList.innerHTML = `<tr><td colspan="3">No hay documentos pendientes.</td></tr>`;
             }
+
+            docs.forEach((data) => {
+                const tr = document.createElement('tr');
+                const baseURL = window.location.href.substring(0, window.location.href.lastIndexOf("/") + 1);
+                const linkACompartir = `${baseURL}firmar.html?id=${data.id}`;
+                const fecha = toDate(data.fechaCreacion);
+
+                tr.innerHTML = `
+                    <td><strong>${escapeHtml(data.nombreArchivo || 'Documento')}</strong></td>
+                    <td>
+                        <div class="status-info-container">
+                            <span class="badge badge-pending">Pendiente</span>
+                            <span class="status-date">${escapeHtml(formatDate(fecha))}</span>
+                            <span class="status-age">${escapeHtml(formatRelativeDate(fecha))}</span>
+                        </div>
+                    </td>
+                    <td class="td-actions">
+                        <button class="icon-btn" title="Copiar link" onclick="copiarLink('${linkACompartir}')" style="color: var(--primary-color);">
+                            <i class="fa-brands fa-whatsapp"></i>
+                        </button>
+                        <button class="icon-btn" title="Eliminar" onclick="eliminarAuditoria('${data.id}')" style="color: var(--danger-color);">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                auditsList.appendChild(tr);
+            });
+
+            if (pendingCounter) {
+                pendingCounter.textContent = pendingCount;
+                pendingCounter.style.display = pendingCount > 0 ? 'inline-block' : 'none';
+            }
+        }, (error) => {
+            console.error(error);
+            auditsList.innerHTML = `<tr><td colspan="3">Error al cargar pendientes.</td></tr>`;
         });
-
-        if (docs.length === 0) {
-            auditsList.innerHTML = `<tr><td colspan="3">No hay documentos pendientes.</td></tr>`;
-        }
-
-        docs.forEach((data) => {
-            const tr = document.createElement('tr');
-            const baseURL = window.location.href.substring(0, window.location.href.lastIndexOf("/") + 1);
-            const linkACompartir = `${baseURL}firmar.html?id=${data.id}`;
-            tr.innerHTML = `
-                <td><strong>${data.nombreArchivo}</strong></td>
-                <td><span class="badge badge-pending">Pendiente</span></td>
-                <td>
-                    <button class="icon-btn" onclick="copiarLink('${linkACompartir}')"><i class="fa-brands fa-whatsapp"></i></button>
-                    <button class="icon-btn" onclick="eliminarAuditoria('${data.id}')" style="color:var(--danger-color)"><i class="fa-solid fa-trash"></i></button>
-                </td>
-            `;
-            auditsList.appendChild(tr);
-        });
-
-        if (pendingCounter) {
-            pendingCounter.textContent = pendingCount;
-            pendingCounter.style.display = pendingCount > 0 ? 'inline-block' : 'none';
-        }
-    });
 }
 
 function cargarHistorialDeEmpresa(tenantUid) {
     const historyList = document.getElementById('historyList');
     if (!historyList || !tenantUid) return;
-    if(listenerHistorial) listenerHistorial();
-    
+
+    if (listenerHistorial) listenerHistorial();
+
     listenerHistorial = db.collection('auditorias')
         .where("tenantId", "==", tenantUid)
         .onSnapshot((snapshot) => {
-            
-        historyList.innerHTML = '';
-        const docs = [];
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            if (data.estado === 'Firmado') docs.push({ id: doc.id, ...data });
+            historyList.innerHTML = '';
+            const docs = [];
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.estado === 'Firmado') {
+                    docs.push({ id: doc.id, ...data });
+                }
+            });
+
+            docs.sort((a, b) => getTime(b.fechaFirma) - getTime(a.fechaFirma));
+
+            if (docs.length === 0) {
+                historyList.innerHTML = `<tr><td colspan="4">No hay documentos firmados todavía.</td></tr>`;
+                ultimoPDFId = null;
+                if (btnDownloadHeader) btnDownloadHeader.style.display = 'none';
+                if (btnVaciarHistorial) btnVaciarHistorial.style.display = 'none';
+                return;
+            }
+
+            ultimoPDFId = docs[0].id;
+            if (btnDownloadHeader) btnDownloadHeader.style.display = 'inline-flex';
+            if (btnVaciarHistorial) btnVaciarHistorial.style.display = 'inline-flex';
+
+            docs.forEach((data) => {
+                const tr = document.createElement('tr');
+                const fechaFirma = toDate(data.fechaFirma);
+
+                tr.innerHTML = `
+                    <td><strong>${escapeHtml(data.nombreArchivo || 'Documento')}</strong></td>
+                    <td>${escapeHtml(formatDateTime(fechaFirma))}</td>
+                    <td><span class="badge badge-signed">${escapeHtml(data.afiliadoNombre || 'Firmante')}</span></td>
+                    <td class="td-actions">
+                        <button class="icon-btn" title="Descargar" onclick="descargarPDF('${data.id}')" style="color: var(--success-color);">
+                            <i class="fa-solid fa-download"></i>
+                        </button>
+                        <button class="icon-btn" title="Eliminar" onclick="eliminarAuditoria('${data.id}')" style="color: var(--danger-color);">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                historyList.appendChild(tr);
+            });
+        }, (error) => {
+            console.error(error);
+            historyList.innerHTML = `<tr><td colspan="4">Error al cargar historial.</td></tr>`;
         });
-
-        if (docs.length === 0) {
-            historyList.innerHTML = `<tr><td colspan="4">Sin historial.</td></tr>`;
-            if (btnDownloadHeader) btnDownloadHeader.style.display = 'none';
-            return;
-        }
-
-        ultimoPDFId = docs[0].id;
-        if (btnDownloadHeader) btnDownloadHeader.style.display = 'inline-flex';
-
-        docs.forEach((data) => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><strong>${data.nombreArchivo}</strong></td>
-                <td>Firmado</td>
-                <td>${data.afiliadoNombre || 'N/A'}</td>
-                <td>
-                    <button class="icon-btn" onclick="descargarPDF('${data.id}')" style="color:var(--success-color)"><i class="fa-solid fa-download"></i></button>
-                </td>
-            `;
-            historyList.appendChild(tr);
-        });
-    });
 }
 
 // ----------------------------------------------------
@@ -282,48 +575,308 @@ function cargarHistorialDeEmpresa(tenantUid) {
 // ----------------------------------------------------
 
 window.copiarLink = function(link) {
-    navigator.clipboard.writeText(link).then(() => { alert("¡Link copiado!"); });
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(link).then(() => {
+            alert("¡Link copiado!");
+        }).catch(() => copiarLinkFallback(link));
+        return;
+    }
+
+    copiarLinkFallback(link);
+};
+
+function copiarLinkFallback(link) {
+    const input = document.createElement('textarea');
+    input.value = link;
+    input.style.position = 'fixed';
+    input.style.opacity = '0';
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand('copy');
+    document.body.removeChild(input);
+    alert("¡Link copiado!");
 }
 
 window.eliminarAuditoria = async function(id) {
-    if(confirm("¿Eliminar?")) await db.collection('auditorias').doc(id).delete();
-}
+    if (!confirm("¿Eliminar este documento del sistema?")) return;
 
-window.descargarUltimoPDF = function() { if (ultimoPDFId) descargarPDF(ultimoPDFId); }
+    try {
+        await db.collection('auditorias').doc(id).delete();
+    } catch (error) {
+        console.error(error);
+        alert("No se pudo eliminar el documento.");
+    }
+};
+
+window.vaciarHistorial = async function() {
+    if (!currentTenantId) return;
+    if (!confirm("¿Vaciar todo el historial de documentos firmados de esta empresa?")) return;
+
+    const buttonText = btnVaciarHistorial?.innerHTML;
+    try {
+        if (btnVaciarHistorial) {
+            btnVaciarHistorial.disabled = true;
+            btnVaciarHistorial.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Vaciando...';
+        }
+
+        const snapshot = await db.collection('auditorias')
+            .where("tenantId", "==", currentTenantId)
+            .where("estado", "==", "Firmado")
+            .get();
+
+        if (snapshot.empty) {
+            alert("No hay documentos firmados para eliminar.");
+            return;
+        }
+
+        let batch = db.batch();
+        let operations = 0;
+        const commits = [];
+
+        snapshot.docs.forEach((doc) => {
+            batch.delete(doc.ref);
+            operations++;
+            if (operations === 450) {
+                commits.push(batch.commit());
+                batch = db.batch();
+                operations = 0;
+            }
+        });
+
+        if (operations > 0) commits.push(batch.commit());
+        await Promise.all(commits);
+        alert("Historial vaciado.");
+    } catch (error) {
+        console.error(error);
+        alert("No se pudo vaciar el historial.");
+    } finally {
+        if (btnVaciarHistorial) {
+            btnVaciarHistorial.disabled = false;
+            btnVaciarHistorial.innerHTML = buttonText || '<i class="fa-solid fa-trash-can"></i> Vaciar Historial';
+        }
+    }
+};
+
+window.descargarUltimoPDF = function() {
+    if (ultimoPDFId) descargarPDF(ultimoPDFId);
+};
 
 window.descargarPDF = async function(id) {
     try {
         const docSnapshot = await db.collection('auditorias').doc(id).get();
+        if (!docSnapshot.exists) {
+            alert("El documento ya no existe.");
+            return;
+        }
+
         const data = docSnapshot.data();
         const existingPdfBytes = await fetch(data.pdfBase64).then(res => res.arrayBuffer());
         const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
-        
         const fontBold = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+        const fontNormal = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
         const pages = pdfDoc.getPages();
-        const page = data.modoFirma === 'hoja_nueva' ? pdfDoc.addPage(PDFLib.PageSizes.A4) : pages[pages.length - 1];
-        
-        if (data.firmaBase64) {
-            const signatureImage = await pdfDoc.embedPng(data.firmaBase64);
-            page.drawImage(signatureImage, { x: 50, y: 50, width: 150, height: 75 });
+        const modoFirma = data.modoFirma || 'misma_hoja';
+        const base64Firma = data.firmaBase64;
+        const signatureImage = base64Firma ? await pdfDoc.embedPng(base64Firma) : null;
+
+        if (modoFirma === 'todas_las_hojas') {
+            pages.forEach((page) => drawSignatureBlock(page, signatureImage, fontBold, fontNormal, data));
+        } else if (modoFirma === 'hoja_nueva') {
+            const legalPage = pdfDoc.addPage(PDFLib.PageSizes.A4);
+            legalPage.drawText('CONSTANCIA DE FIRMA ELECTRÓNICA', {
+                x: 50,
+                y: legalPage.getSize().height - 60,
+                size: 14,
+                font: fontBold
+            });
+            legalPage.drawText(`Documento original: ${safePdfText(data.nombreArchivo || 'Documento')}`, {
+                x: 50,
+                y: legalPage.getSize().height - 85,
+                size: 9,
+                font: fontNormal
+            });
+            drawSignatureBlock(legalPage, signatureImage, fontBold, fontNormal, data);
+        } else {
+            drawSignatureBlock(pages[pages.length - 1], signatureImage, fontBold, fontNormal, data);
         }
-        
-        page.drawText(`Firmado por: ${data.afiliadoNombre || 'N/A'}`, { x: 50, y: 30, size: 10, font: fontBold });
 
         const pdfBytes = await pdfDoc.save();
         const blob = new Blob([pdfBytes], { type: 'application/pdf' });
         const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `FIRMADO_${data.nombreArchivo}`;
+        const objectUrl = URL.createObjectURL(blob);
+        const baseName = (data.nombreArchivo || 'documento.pdf').replace(/\.pdf$/i, '');
+        link.href = objectUrl;
+        link.download = `${baseName}_FIRMADO.pdf`;
         link.click();
-    } catch (err) { alert("Error al generar PDF."); }
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    } catch (error) {
+        console.error(error);
+        alert("Error al generar PDF.");
+    }
+};
+
+function drawSignatureBlock(page, signatureImage, fontBold, fontNormal, data) {
+    const signatureWidth = 160;
+    const signatureHeight = 80;
+    const { x, y } = getSignatureCoordinates(page, data.posicionFirma, signatureWidth, signatureHeight);
+    const fechaFirma = formatDateTime(toDate(data.fechaFirma) || new Date());
+
+    if (signatureImage) {
+        page.drawImage(signatureImage, {
+            x,
+            y,
+            width: signatureWidth,
+            height: signatureHeight
+        });
+    }
+
+    const textY = Math.max(32, y - 14);
+    page.drawText(`Firmante: ${safePdfText(data.afiliadoNombre || 'N/A')}`, {
+        x,
+        y: textY,
+        size: 9,
+        font: fontBold
+    });
+    page.drawText(`DNI: ${safePdfText(data.afiliadoDNI || '---')}`, {
+        x,
+        y: textY - 11,
+        size: 8,
+        font: fontNormal
+    });
+    page.drawText(`Fecha: ${safePdfText(fechaFirma)}`, {
+        x,
+        y: textY - 22,
+        size: 8,
+        font: fontNormal
+    });
+}
+
+function getSignatureCoordinates(page, position, signatureWidth, signatureHeight) {
+    const { width, height } = page.getSize();
+    const normalizedPosition = position || 'abajo_derecha';
+    const [, horizontal = 'derecha'] = normalizedPosition.split('_');
+    const vertical = normalizedPosition.startsWith('centro') ? 'centro' : normalizedPosition.split('_')[0];
+    const marginX = 50;
+    const marginBottom = 70;
+
+    let x = marginX;
+    if (horizontal === 'centro') x = (width - signatureWidth) / 2;
+    if (horizontal === 'derecha') x = width - signatureWidth - marginX;
+
+    let y = marginBottom;
+    if (vertical === 'centro') y = (height - signatureHeight) / 2;
+    if (vertical === 'arriba') y = height - signatureHeight - marginBottom;
+
+    return {
+        x: Math.max(20, x),
+        y: Math.max(70, y)
+    };
+}
+
+// ----------------------------------------------------
+// 5. UTILIDADES
+// ----------------------------------------------------
+
+function toDate(value) {
+    if (!value) return null;
+    if (value instanceof Date) return value;
+    if (typeof value.toDate === 'function') return value.toDate();
+    if (typeof value.toMillis === 'function') return new Date(value.toMillis());
+    if (typeof value.seconds === 'number') return new Date(value.seconds * 1000);
+
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function getTime(value) {
+    const date = toDate(value);
+    return date ? date.getTime() : 0;
+}
+
+function formatDate(date) {
+    if (!date) return 'Fecha pendiente';
+    return date.toLocaleDateString('es-AR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    });
+}
+
+function formatDateTime(date) {
+    if (!date) return 'Recién';
+    return date.toLocaleString('es-AR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+function formatRelativeDate(date) {
+    if (!date) return 'Recién';
+
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMinutes = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (isSameDay(now, date)) return 'Hoy';
+    if (diffDays === 1 || isYesterday(now, date)) return 'Ayer';
+    if (diffMinutes < 60) return diffMinutes <= 1 ? 'Hace 1 minuto' : `Hace ${diffMinutes} minutos`;
+    if (diffHours < 24) return diffHours === 1 ? 'Hace 1 hora' : `Hace ${diffHours} horas`;
+    return diffDays === 1 ? 'Hace 1 día' : `Hace ${diffDays} días`;
+}
+
+function isSameDay(a, b) {
+    return a.getFullYear() === b.getFullYear()
+        && a.getMonth() === b.getMonth()
+        && a.getDate() === b.getDate();
+}
+
+function isYesterday(now, date) {
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    return isSameDay(yesterday, date);
+}
+
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function safePdfText(value) {
+    return String(value).replace(/[^\x20-\x7EÀ-ÿ]/g, '');
+}
+
+function friendlyFirebaseError(error) {
+    const code = error?.code || '';
+    if (code.includes('auth/email-already-in-use')) return 'ese email ya está registrado.';
+    if (code.includes('auth/invalid-email')) return 'el email no es válido.';
+    if (code.includes('auth/weak-password')) return 'la clave es demasiado débil.';
+    if (code.includes('permission-denied')) return 'no tenés permisos para hacer esta acción.';
+    return error?.message || 'error desconocido.';
 }
 
 // TEMA
 const themeToggle = document.getElementById('themeToggle');
-if(themeToggle) themeToggle.addEventListener('click', () => {
-    const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-});
 const savedTheme = localStorage.getItem('theme') || 'light';
+document.body.setAttribute('data-theme', savedTheme);
 document.documentElement.setAttribute('data-theme', savedTheme);
+
+if (themeToggle) {
+    themeToggle.innerHTML = savedTheme === 'dark' ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+    themeToggle.addEventListener('click', () => {
+        const currentTheme = document.body.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        document.body.setAttribute('data-theme', newTheme);
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        themeToggle.innerHTML = newTheme === 'dark' ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+    });
+}

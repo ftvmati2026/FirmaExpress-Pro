@@ -87,15 +87,22 @@
                         <span><strong>Misma Hoja:</strong> Firma en la última página.</span>
                     </label>
                     <label class="radio-option">
+                        <input type="radio" name="modoFirma" value="todas_las_hojas">
+                        <span><strong>Todas las Hojas:</strong> Firmar en todas las hojas del documento.</span>
+                    </label>
+                    <label class="radio-option">
                         <input type="radio" name="modoFirma" value="hoja_nueva">
                         <span><strong>Hoja Anexa:</strong> Nueva página legal al final.</span>
                     </label>
                     <div id="posicionFirmaContainer" style="margin-top: 10px;">
                         <label style="font-size: 0.8rem; color: var(--text-secondary);">Posición de firma:</label>
                         <select id="posicionFirma">
-                            <option value="abajo_derecha">Abajo Derecha</option>
-                            <option value="abajo_centro">Abajo Centro</option>
+                            <option value="centro_izquierda">Centro Izquierda</option>
+                            <option value="centro_centro">Centro Centro</option>
+                            <option value="centro_derecha">Centro Derecha</option>
                             <option value="abajo_izquierda">Abajo Izquierda</option>
+                            <option value="abajo_centro">Abajo Centro</option>
+                            <option value="abajo_derecha">Abajo Derecha</option>
                         </select>
                     </div>
                 </div>
@@ -116,7 +123,12 @@
         </section>
 
         <section class="card list-section" style="margin-top: 30px;">
-            <h2 style="color: var(--success-color);"><i class="fa-solid fa-history"></i> Historial de Documentos Firmados</h2>
+            <div class="section-toolbar">
+                <h2 style="color: var(--success-color);"><i class="fa-solid fa-history"></i> Historial de Documentos Firmados</h2>
+                <button type="button" class="btn btn-danger-outline" id="btnVaciarHistorial" onclick="vaciarHistorial()">
+                    <i class="fa-solid fa-trash-can"></i> Vaciar Historial
+                </button>
+            </div>
             <div class="table-container">
                 <table class="modern-table">
                     <thead><tr><th>Archivo</th><th>Fecha</th><th>Firmante</th><th>Acciones</th></tr></thead>
@@ -135,11 +147,13 @@
                 <div class="form-group-modal"><label>Nombre</label><input type="text" id="empNombre" required></div>
                 <div class="form-group-modal"><label>WhatsApp</label><input type="text" id="empWhatsapp"></div>
                 <div class="form-group-modal"><label>Email</label><input type="email" id="empEmail" required></div>
-                <div class="form-group-modal" id="passGroup"><label>Clave</label><input type="password" id="empPassword"></div>
+                <div class="form-group-modal" id="passGroup"><label>Clave</label><input type="password" id="empPassword" minlength="6"></div>
                 <div class="form-group-modal"><label>Logo URL</label><input type="url" id="empLogoUrl"></div>
                 <div class="form-group-modal"><label>Color</label><input type="color" id="empColor" value="#2563eb"></div>
                 <div id="editActions" style="display: none; margin-bottom: 15px;">
-                    <button type="button" class="btn" style="background: var(--warning-color); color: white; width: 100%;">Reestablecer Clave</button>
+                    <button type="button" class="btn" style="background: var(--warning-color); color: white; width: 100%;" onclick="enviarResetClave()">
+                        <i class="fa-solid fa-key"></i> Reestablecer Clave
+                    </button>
                 </div>
                 <div style="display: flex; gap: 10px;">
                     <button type="button" class="btn" style="flex:1" onclick="cerrarModalEmpresa()">Cancelar</button>
@@ -151,7 +165,15 @@
 
     <footer>
         <div class="footer-content">
-            <p>FirmaExpress Pro - Matías Gómez</p>
+            <p class="credits">Diseñado y Desarrollado en su totalidad por <strong>Matías Gómez</strong></p>
+            <div class="contact-info">
+                <a href="https://wa.me/5492612404479" target="_blank" class="contact-item">
+                    <i class="fa-brands fa-whatsapp"></i> +54 9 2612404479
+                </a>
+                <a href="mailto:ftvmati2022@gmail.com" class="contact-item">
+                    <i class="fa-solid fa-envelope"></i> ftvmati2022@gmail.com
+                </a>
+            </div>
         </div>
     </footer>
 
