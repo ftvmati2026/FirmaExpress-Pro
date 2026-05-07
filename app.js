@@ -75,7 +75,8 @@ function cargarListaEmpresas() {
     const empresasList = document.getElementById('empresasList');
     if (!empresasList) return;
 
-    db.collection('empresas').orderBy('fechaCreacion', 'desc').onSnapshot(snapshot => {
+    // Quitamos el orderBy para asegurar que aparezcan TODAS, incluso las viejas sin fecha
+    db.collection('empresas').onSnapshot(snapshot => {
         empresasList.innerHTML = '';
         if (snapshot.empty) {
             empresasList.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px; color: var(--text-secondary);">No tenés ninguna empresa cliente registrada todavía.</td></tr>';
@@ -384,22 +385,22 @@ function ajustarBrillo(hex, percent) {
 // 3. LÓGICA DE CLIENTE / TENANT (Lo que ven las empresas)
 // ----------------------------------------------------
 function iniciarModoCliente(tenantUid) {
-    // Buscar los datos de la empresa (Nombre y estado activo)
+    // ASEGURAMOS QUE EL PANEL SE VEA SIEMPRE
+    superAdminDashboard.style.display = 'none';
+    tenantDashboard.style.display = 'block';
+    btnVolverAdmin.style.display = 'none'; 
+    btnPerfil.style.display = 'inline-block';
+
     db.collection('empresas').doc(tenantUid).get().then(doc => {
         if(doc.exists) {
             const data = doc.data();
             
-            // Echarlo si la empresa está suspendida
             if (data.activa === false) {
-                alert("Tu cuenta se encuentra suspendida temporalmente por falta de pago o revisión administrativa.\nPor favor, contactate con el administrador del sistema.");
+                alert("Tu cuenta se encuentra suspendida.");
                 auth.signOut();
                 return;
             }
             
-            superAdminDashboard.style.display = 'none';
-            tenantDashboard.style.display = 'block';
-            btnVolverAdmin.style.display = 'none'; 
-            btnPerfil.style.display = 'inline-block'; // Mostrar botón de perfil
             headerTitle.textContent = data.nombre;
 
             // Marca Blanca: Color
@@ -419,6 +420,13 @@ function iniciarModoCliente(tenantUid) {
                 defaultIcon.style.display = 'block';
             }
             
+            cargarAuditoriasDeEmpresa();
+            cargarHistorialDeEmpresa(tenantUid);
+        } else {
+            headerTitle.textContent = "Mi Panel de Firma";
+            if (document.getElementById('defaultLogoIcon')) {
+                document.getElementById('defaultLogoIcon').style.display = 'block';
+            }
             cargarAuditoriasDeEmpresa();
             cargarHistorialDeEmpresa(tenantUid);
         }
