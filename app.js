@@ -592,11 +592,8 @@ function cargarAuditoriasDeEmpresa() {
             let estadoHtml = `<div class="status-info-container"><span class="badge ${badgeClass}">${data.estado}</span>${infoExtra}</div>`;
             
             let botonesAccion = `
-                <button class="icon-btn" title="Compartir por WhatsApp" onclick="compartirWhatsApp('${doc.id}', '${data.nombreArchivo}')" style="color: #25D366;">
+                <button class="icon-btn" title="Copiar link para enviar por WhatsApp" onclick="copiarLink('${linkACompartir}')" style="color: #25D366;">
                     <i class="fa-brands fa-whatsapp"></i>
-                </button>
-                <button class="icon-btn" title="Copiar Link" onclick="copiarLink('${linkACompartir}')">
-                    <i class="fa-solid fa-copy"></i>
                 </button>
                 <button class="icon-btn" title="Eliminar registro" onclick="eliminarAuditoria('${doc.id}')" style="color: var(--danger-color);">
                     <i class="fa-solid fa-trash"></i>
@@ -730,9 +727,9 @@ window.compartirWhatsApp = function(id, nombreArchivo) {
 
 window.copiarLink = function(link) {
     navigator.clipboard.writeText(link).then(() => {
-        alert("¡Link copiado!\n\nYa podés mandarlo por WhatsApp al cliente.");
+        alert("¡Link copiado con éxito!\n\nYa podés pegarlo en el chat de WhatsApp de tu cliente.");
     }).catch(err => {
-        alert("Enlace:\n" + link); 
+        alert("No se pudo copiar automáticamente. Por favor, copiá este enlace manualmente:\n\n" + link); 
     });
 }
 
