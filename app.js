@@ -509,7 +509,7 @@ if (uploadForm) {
                 firmaBase64: null
             });
             
-            const baseURL = window.location.href.split('index.html')[0];
+            const baseURL = window.location.href.split('app.html')[0];
             const linkUnico = `${baseURL}firmar.html?id=${docRef.id}`;
             
             alert(`¡Documento guardado con éxito!\n\nPodés copiar el link haciendo clic en el ícono de WhatsApp en la tabla de abajo.`);
@@ -557,7 +557,7 @@ function cargarAuditoriasDeEmpresa() {
         snapshot.forEach((doc) => {
             const data = doc.data();
             const esFirmado = data.estado === "Firmado";
-            const baseURL = window.location.href.split('index.html')[0];
+            const baseURL = window.location.href.split('app.html')[0];
             const linkACompartir = `${baseURL}firmar.html?id=${doc.id}`;
 
             const tr = document.createElement('tr');

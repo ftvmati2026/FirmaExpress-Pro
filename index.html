@@ -3,276 +3,390 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Control - FirmaExpress Pro</title>
-    <meta name="darkreader-lock"> <!-- Bloquea extensiones como Dark Reader -->
-    <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>FirmaExpress Pro - Firmá cualquier documento en 30 segundos</title>
+    <link rel="stylesheet" href="landing.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        /* Estilos para el Modal y Selectores */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); padding: 20px; }
-        .modal-content { background: var(--surface-color); padding: 30px; border-radius: var(--border-radius); width: 90%; max-width: 500px; box-shadow: var(--shadow-lg); max-height: 90vh; overflow-y: auto; position: relative; }
-        .form-group-modal { margin-bottom: 15px; }
-        .form-group-modal label { display: block; margin-bottom: 5px; font-weight: 500; color: var(--text-primary); }
-        .form-group-modal input, .form-group-modal select { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-primary); font-family: inherit; }
-        .flex-between { display: flex; justify-content: space-between; align-items: center; }
-        
-        .radio-group { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
-        .radio-option { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; transition: all 0.2s; }
-        .radio-option:hover { border-color: var(--primary-color); background: rgba(37, 99, 235, 0.05); }
-        .radio-option input[type="radio"] { accent-color: var(--primary-color); transform: scale(1.2); }
-    </style>
 </head>
 <body>
-    <header>
-        <div class="header-content">
+    <nav class="glass-nav">
+        <div class="nav-content">
             <div class="logo">
-                <img id="customLogo" src="" style="display: none; height: 40px; border-radius: 4px; margin-right: 10px;" onerror="this.style.display='none'; document.getElementById('defaultLogoIcon').style.display='block';">
-                <i class="fa-solid fa-file-signature" id="defaultLogoIcon"></i>
-                <h1 id="headerTitle">FirmaExpress Pro</h1>
+                <i class="fa-solid fa-file-signature"></i>
+                <span>FirmaExpress Pro</span>
             </div>
-            <div style="display: flex; gap: 15px; align-items: center;">
-                <span id="userEmailDisplay" style="font-size: 0.9rem; color: var(--text-secondary); font-weight: 500;"></span>
-                <button id="btnPerfil" class="icon-btn" title="Mi Perfil / Cambiar Clave" style="display: none;" onclick="abrirModalPerfil()">
-                    <i class="fa-solid fa-user-gear"></i>
-                </button>
-                <button id="btnDownloadPDF" class="icon-btn" title="Descargar PDF" style="display: none;" onclick="descargarUltimoPDF()">
-                    <i class="fa-solid fa-file-arrow-down"></i>
-                </button>
-                <button id="themeToggle" class="icon-btn" aria-label="Cambiar tema">
-                    <i class="fa-solid fa-moon"></i>
-                </button>
-                <button id="btnLogout" class="icon-btn" aria-label="Cerrar sesión" title="Cerrar sesión" style="color: var(--danger-color);">
-                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                </button>
+            <div class="nav-links">
+                <a href="#beneficios">Beneficios</a>
+                <a href="#como-funciona">Cómo funciona</a>
+                <a href="#calculadora">Ahorro</a>
+                <a href="#precios">Precios</a>
+                <a href="#faq">FAQ</a>
+                <a href="login.html" class="btn-login">Iniciar Sesión</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-content">
+            <div class="hero-text">
+                <span class="badge-promo">Firma Electrónica Válida · Art. 5, Ley 25.506</span>
+                <h1>Eliminá el papel y los traslados de tu gestión diaria</h1>
+                <p>La plataforma de firma electrónica más rápida para abogados, contadores y empresas. Firmá contratos, balances y autorizaciones desde el celular en segundos.</p>
+                <div class="hero-cta">
+                    <a href="https://wa.me/5492612404479?text=Hola%20Mati,%20quiero%20probar%20la%20demo%20de%20FirmaExpress%20Pro" target="_blank" class="btn-primary-lg">Solicitar Demo Gratis</a>
+                    <a href="#como-funciona" class="btn-secondary-lg">Ver cómo funciona</a>
+                </div>
+                <div class="hero-trust">
+                    <p>Confiado por profesionales en:</p>
+                    <div class="trust-icons">
+                        <i class="fa-solid fa-scale-balanced" title="Estudios Jurídicos"></i>
+                        <i class="fa-solid fa-calculator" title="Estudios Contables"></i>
+                        <i class="fa-solid fa-school" title="Escuelas e Institutos"></i>
+                        <i class="fa-solid fa-hospital" title="Clínicas y Sanatorios"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-image">
+                <div class="image-wrapper">
+                    <img src="hero_landing.png" alt="FirmaExpress Pro Demo">
+                    <div class="floating-card card-1">
+                        <i class="fa-solid fa-check-circle"></i>
+                        <span>Firma Validada</span>
+                    </div>
+                    <div class="floating-card card-2">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        <span>Firma Electrónica · Art. 5</span>
+                    </div>
+                </div>
             </div>
         </div>
     </header>
 
-    <!-- ========================================== -->
-    <!-- DASHBOARD SUPER ADMIN (Solo visible para Matías) -->
-    <!-- ========================================== -->
-    <main class="container" id="superAdminDashboard" style="display: none;">
-        <section class="card">
-            <div class="flex-between" style="margin-bottom: 25px;">
-                <h2><i class="fa-solid fa-building-user"></i> Empresas Clientes</h2>
-                <button class="btn btn-primary" onclick="abrirModalEmpresa()">
-                    <i class="fa-solid fa-plus"></i> Registrar Empresa
-                </button>
+    <!-- METRICS / SOCIAL PROOF -->
+    <section class="metrics-banner">
+        <div class="metrics-container">
+            <div class="metric-item">
+                <span class="metric-number">30<small>seg</small></span>
+                <span class="metric-label">Tiempo prom. de firma</span>
             </div>
-            
-            <div class="table-container">
-                <table class="modern-table">
-                    <thead>
-                        <tr>
-                            <th>Nombre / WhatsApp</th>
-                            <th>Email de Acceso</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="empresasList">
-                        <!-- Generado por JS -->
-                    </tbody>
-                </table>
+            <div class="metric-divider"></div>
+            <div class="metric-item">
+                <span class="metric-number">100<small>%</small></span>
+                <span class="metric-label">Válida · Art. 5, Ley 25.506</span>
             </div>
-        </section>
-    </main>
+            <div class="metric-divider"></div>
+            <div class="metric-item">
+                <span class="metric-number">0<small>apps</small></span>
+                <span class="metric-label">Instalaciones requeridas</span>
+            </div>
+        </div>
+    </section>
 
+    <section id="beneficios" class="features">
+        <div class="section-header">
+            <h2>¿Por qué elegir FirmaExpress Pro?</h2>
+            <p>Diseñado para la eficiencia y la seguridad legal.</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fa-solid fa-bolt"></i></div>
+                <h3>Velocidad Extrema</h3>
+                <p>Mandás un WhatsApp, el cliente firma con el dedo y listo. Sin apps pesadas ni registros lentos.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fa-solid fa-gavel"></i></div>
+                <h3>Respaldo Legal</h3>
+                <p>La firma electrónica está reconocida en el Art. 5 de la Ley 25.506. Generamos un rastro de auditoría con IP, fecha y hora que respaldará tu posición ante cualquier cuestionamiento.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fa-solid fa-mobile-screen-button"></i></div>
+                <h3>Mobile First</h3>
+                <p>Optimizado para que tus clientes firmen desde cualquier celular, sin importar el modelo.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fa-solid fa-leaf"></i></div>
+                <h3>Cero Papel</h3>
+                <p>Ahorrá en impresiones, mensajería y espacio de archivo. El futuro es digital.</p>
+            </div>
+        </div>
+    </section>
 
-    <!-- ========================================== -->
-    <!-- DASHBOARD CLIENTE / TENANT -->
-    <!-- ========================================== -->
-    <main class="container" id="tenantDashboard" style="display: none;">
-        
-        <!-- Botón Volver (solo le aparece a Matías cuando entra a revisar un cliente) -->
-        <button id="btnVolverAdmin" class="btn" style="display: none; margin-bottom: 20px; background-color: var(--text-secondary); color: white;" onclick="volverAlAdmin()">
-            <i class="fa-solid fa-arrow-left"></i> Volver a mi panel de administrador
-        </button>
+    <section id="como-funciona" class="steps">
+        <div class="section-header">
+            <h2>Simple para vos, fácil para tu cliente</h2>
+        </div>
+        <div class="steps-container">
+            <div class="step">
+                <div class="step-num">1</div>
+                <h3>Subí el PDF</h3>
+                <p>Desde tu panel, cargás el documento que necesitás firmar.</p>
+            </div>
+            <div class="step">
+                <div class="step-num">2</div>
+                <h3>Enviá el Link</h3>
+                <p>Generamos un link único para que lo mandes por WhatsApp o Mail.</p>
+            </div>
+            <div class="step">
+                <div class="step-num">3</div>
+                <h3>Recibí el Firmado</h3>
+                <p>Cuando el cliente firma, recibís el documento sellado en tu panel.</p>
+            </div>
+        </div>
+    </section>
 
-        <section class="card upload-section">
-            <h2><i class="fa-solid fa-cloud-arrow-up"></i> Enviar Documento a Firmar</h2>
-            <p class="subtitle">Subí el PDF original y elegí cómo querés que se aplique la firma electrónica.</p>
-            
-            <form id="uploadForm" class="upload-form">
-                <div class="form-group file-upload-wrapper">
-                    <input type="file" id="pdfFile" accept="application/pdf" class="file-input" required>
-                    <div class="file-upload-design">
-                        <i class="fa-regular fa-file-pdf"></i>
-                        <span id="fileNameDisplay">Hacé clic para seleccionar el PDF</span>
+    <!-- CALCULADORA DE AHORRO -->
+    <section id="calculadora" class="calculator-section">
+        <div class="section-header">
+            <span class="badge-promo">Herramienta Gratuita</span>
+            <h2>¿Cuánto te cuesta seguir firmando en papel?</h2>
+            <p>Mové los controles y descubrí cuánto dinero perdés cada mes sin darte cuenta.</p>
+        </div>
+        <div class="calculator-box">
+            <div class="calc-inputs">
+                <div class="calc-group">
+                    <label for="sliderFirmas"><i class="fa-solid fa-file-signature"></i> Firmas que gestionás por mes</label>
+                    <input type="range" id="sliderFirmas" min="5" max="100" value="20" class="calc-slider">
+                    <div class="slider-value"><span id="valFirmas">20</span> firmas/mes</div>
+                </div>
+                <div class="calc-group">
+                    <label for="sliderTiempo"><i class="fa-solid fa-clock"></i> Minutos promedio por firma</label>
+                    <input type="range" id="sliderTiempo" min="10" max="90" value="45" class="calc-slider">
+                    <div class="slider-value"><span id="valTiempo">45</span> minutos</div>
+                </div>
+                <div class="calc-group">
+                    <label for="sliderHora"><i class="fa-solid fa-dollar-sign"></i> Valor de tu hora profesional (USD)</label>
+                    <input type="range" id="sliderHora" min="10" max="150" value="40" class="calc-slider">
+                    <div class="slider-value">$<span id="valHora">40</span> USD/hora</div>
+                </div>
+            </div>
+            <div class="calc-results">
+                <h3>Tu pérdida mensual sin FirmaExpress:</h3>
+                <div class="results-grid">
+                    <div class="result-item loss">
+                        <i class="fa-solid fa-hourglass-end"></i>
+                        <span class="result-number" id="resHoras">15</span>
+                        <span class="result-label">Horas perdidas/mes</span>
+                    </div>
+                    <div class="result-item loss">
+                        <i class="fa-solid fa-money-bill-wave"></i>
+                        <span class="result-number">$<span id="resCosto">600</span></span>
+                        <span class="result-label">Costo de oportunidad</span>
+                    </div>
+                    <div class="result-item loss">
+                        <i class="fa-solid fa-print"></i>
+                        <span class="result-number" id="resPapel">60</span>
+                        <span class="result-label">Hojas desperdiciadas</span>
                     </div>
                 </div>
-
-                <!-- SELECTOR DE MODO DE FIRMA -->
-                <div style="margin-top: 25px; margin-bottom: 25px; text-align: left; background: var(--bg-color); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
-                    <label style="font-weight: 600; font-size: 1.1rem; color: var(--text-primary); display:block; margin-bottom: 10px;">
-                        <i class="fa-solid fa-pen-nib"></i> Ubicación de la Firma en este PDF:
-                    </label>
-                    <div class="radio-group">
-                        <label class="radio-option" style="flex-direction: column; align-items: flex-start;">
-                            <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
-                                <input type="radio" name="modoFirma" value="misma_hoja" checked onchange="document.getElementById('posicionFirmaContainer').style.display='block'"> 
-                                <span><strong>Misma Hoja:</strong> Estampar firma chiquita en la última hoja del documento original.</span>
-                            </div>
-                            <div id="posicionFirmaContainer" style="margin-left: 28px; margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.02); border-radius: 8px; width: calc(100% - 28px);">
-                                <label style="font-size: 0.9rem; color: var(--text-secondary); display: block; margin-bottom: 5px;"><i class="fa-solid fa-arrows-to-dot"></i> Seleccione la ubicación de la firma en la hoja:</label>
-                                <select id="posicionFirma" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--surface-color); color: var(--text-primary); font-family: inherit; margin-top: 5px;">
-                                    <option value="abajo_izquierda">Abajo a la Izquierda</option>
-                                    <option value="abajo_centro">Abajo en el Centro</option>
-                                    <option value="abajo_derecha">Abajo a la Derecha</option>
-                                    <option value="centro_izquierda">Centro a la Izquierda</option>
-                                    <option value="centro">En el Centro</option>
-                                    <option value="centro_derecha">Centro a la Derecha</option>
-                                    <option value="arriba_izquierda">Arriba a la Izquierda</option>
-                                    <option value="arriba_centro">Arriba en el Centro</option>
-                                    <option value="arriba_derecha">Arriba a la Derecha</option>
-                                </select>
-                            </div>
-                        </label>
-                        <label class="radio-option">
-                            <input type="radio" name="modoFirma" value="hoja_nueva" onchange="document.getElementById('posicionFirmaContainer').style.display='none'"> 
-                            <span><strong>Hoja Anexa:</strong> Agregar una nueva hoja legal al final exclusiva para firmas (Ideal documentos largos).</span>
-                        </label>
-                    </div>
-                </div>
-
-                <button type="submit" class="btn btn-primary" id="btnUpload" disabled>
-                    <i class="fa-solid fa-link"></i> Generar Link Único para el Cliente
-                </button>
-            </form>
-        </section>
-
-        <section class="card list-section">
-            <h2><i class="fa-solid fa-clock-rotate-left"></i> Historial de Documentos Firmados <span id="historyCounter" class="counter-badge" style="display: none;">0</span></h2>
-            <div class="table-container">
-                <table class="modern-table" id="historyTable">
-                    <thead>
-                        <tr>
-                            <th>Archivo PDF</th>
-                            <th>Fecha Firma</th>
-                            <th>Firmante</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="historyList">
-                        <!-- Generado por JS -->
-                    </tbody>
-                </table>
-            </div>
-        </section>
-    </main>
-
-
-    <!-- ========================================== -->
-    <!-- MODAL NUEVA EMPRESA -->
-    <!-- ========================================== -->
-    <div id="modalEmpresa" class="modal">
-        <div class="modal-content card">
-            <h2 style="margin-top: 0; color: var(--primary-color);" id="modalEmpresaTitle"><i class="fa-solid fa-building"></i> Dar de Alta Cliente</h2>
-            <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 0.9rem;" id="modalEmpresaSub">Creá el usuario para que el estudio/empresa pueda ingresar a su propio panel privado.</p>
-            
-            <form id="formNuevaEmpresa">
-                <input type="hidden" id="editEmpresaId">
-                <div class="form-group-modal">
-                    <label>Nombre Comercial</label>
-                    <input type="text" id="empNombre" required placeholder="Ej: Estudio Jurídico López">
-                </div>
-                <div class="form-group-modal">
-                    <label>WhatsApp de Contacto</label>
-                    <input type="text" id="empWhatsapp" placeholder="Ej: 5492612404479">
-                </div>
-                <div class="form-group-modal">
-                    <label>Email de Acceso</label>
-                    <input type="email" id="empEmail" required placeholder="contacto@estudiolopez.com">
-                </div>
-                <div class="form-group-modal" id="passGroup">
-                    <label>Contraseña Inicial</label>
-                    <input type="text" id="empPassword" placeholder="Escribile una clave inicial">
-                </div>
-                <div class="form-group-modal">
-                    <label>Logo de la Empresa (URL o Subir Archivo)</label>
-                    <div style="display: flex; flex-direction: column; gap: 10px;">
-                        <input type="url" id="empLogoUrl" placeholder="Pegar link de imagen aquí...">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <label for="empLogoFile" class="btn" style="background: var(--text-secondary); color: white; cursor: pointer; font-size: 0.8rem; margin: 0; flex: 1; text-align: center; padding: 8px;">
-                                <i class="fa-solid fa-upload"></i> Seleccionar Imagen de PC
-                            </label>
-                            <input type="file" id="empLogoFile" accept="image/*" style="display: none;">
+                <div class="calc-comparison">
+                    <div class="comp-vs">
+                        <div class="comp-bad">
+                            <span class="comp-label">Sin FirmaExpress</span>
+                            <span class="comp-amount" id="compSin">$600/mes</span>
                         </div>
-                        <div id="logoPreviewContainer" style="display: none; text-align: center; margin-top: 5px; padding: 10px; border: 1px dashed var(--border-color); border-radius: 8px;">
-                            <p style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 5px;">Vista previa del logo:</p>
-                            <img id="logoPreview" src="" style="max-height: 60px; max-width: 100%; border-radius: 4px;">
-                            <button type="button" class="btn" style="background: var(--danger-color); color: white; padding: 2px 8px; font-size: 0.7rem; margin-top: 5px; display: block; margin-left: auto; margin-right: auto;" onclick="quitarLogoPreview()">
-                                <i class="fa-solid fa-trash"></i> Quitar
-                            </button>
+                        <div class="comp-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                        <div class="comp-good">
+                            <span class="comp-label">Con FirmaExpress</span>
+                            <span class="comp-amount">$100/mes</span>
                         </div>
                     </div>
-                </div>
-                <div class="form-group-modal">
-                    <label>Color Corporativo (Marca Blanca)</label>
-                    <div style="display: flex; align-items: center; gap: 15px; background: var(--bg-color); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">
-                        <input type="color" id="empColor" value="#2563eb" style="width: 50px; height: 40px; border: none; background: none; cursor: pointer;">
-                        <span style="font-size: 0.85rem; color: var(--text-secondary);">Elegí el color principal del panel para este cliente.</span>
+                    <div class="comp-saving">
+                        <span>Ahorro neto mensual:</span>
+                        <strong id="compAhorro">$500 USD</strong>
                     </div>
                 </div>
-                <div id="editActions" style="display: none; margin-top: 10px; padding: 10px; background: rgba(59, 130, 246, 0.05); border-radius: 8px;">
-                    <p style="font-size: 0.8rem; margin-bottom: 5px;"><strong>Gestión de Claves:</strong></p>
-                    <button type="button" class="btn" style="background: var(--warning-color); color: white; width: 100%; font-size: 0.8rem;" onclick="mandarResetClave()">
-                        <i class="fa-solid fa-envelope-open-text"></i> Enviar Email para Reestablecer Clave
-                    </button>
-                </div>
-                <div style="display: flex; gap: 15px; margin-top: 25px;">
-                    <button type="button" class="btn" style="background: transparent; color: var(--danger-color); border: 1px solid var(--danger-color); flex: 1;" onclick="cerrarModalEmpresa()">Cancelar</button>
-                    <button type="submit" class="btn btn-primary" style="flex: 2;" id="btnGuardarEmpresa">Guardar Cambios</button>
-                </div>
-            </form>
+                <a href="https://wa.me/5492612404479?text=Hola%20Mati,%20usé%20la%20calculadora%20y%20quiero%20ahorrar%20con%20FirmaExpress" target="_blank" class="btn-primary-lg calc-cta">
+                    <i class="fa-solid fa-rocket"></i> Quiero empezar a ahorrar → Solicitar Demo
+                </a>
+            </div>
         </div>
-    </div>
+    </section>
 
-    <!-- ========================================== -->
-    <!-- MODAL MI PERFIL (CLIENTE) -->
-    <!-- ========================================== -->
-    <div id="modalPerfil" class="modal">
-        <div class="modal-content card">
-            <h2 style="margin-top: 0; color: var(--primary-color);"><i class="fa-solid fa-user-shield"></i> Mi Perfil</h2>
-            <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 0.9rem;">Podés cambiar tu contraseña de acceso aquí.</p>
-            
-            <form id="formCambiarClave">
-                <div class="form-group-modal">
-                    <label>Nueva Contraseña</label>
-                    <input type="password" id="newPassword" required minlength="6" placeholder="Mínimo 6 caracteres">
-                </div>
-                <div class="form-group-modal">
-                    <label>Repetir Nueva Contraseña</label>
-                    <input type="password" id="newPasswordConfirm" required minlength="6">
-                </div>
-                <div style="display: flex; gap: 15px; margin-top: 30px;">
-                    <button type="button" class="btn" style="background: transparent; color: var(--text-secondary); border: 1px solid var(--text-secondary); flex: 1;" onclick="cerrarModalPerfil()">Cerrar</button>
-                    <button type="submit" class="btn btn-primary" style="flex: 2;">Actualizar Contraseña</button>
-                </div>
-            </form>
+    <!-- PRECIOS -->
+    <section id="precios" class="pricing-section">
+        <div class="section-header">
+            <h2>Planes simples, sin letra chica</h2>
+            <p>Elegí el que mejor se adapte a tu estudio o empresa. Cancelá cuando quieras.</p>
         </div>
-    </div>
+        <div class="pricing-grid">
+            <div class="pricing-card">
+                <div class="pricing-header">
+                    <span class="plan-icon"><i class="fa-solid fa-rocket"></i></span>
+                    <h3>Starter</h3>
+                    <p class="plan-desc">Ideal para estudios que arrancan</p>
+                </div>
+                <div class="pricing-price">
+                    <span class="price-amount">$100</span>
+                    <span class="price-period">USD / mes</span>
+                </div>
+                <ul class="pricing-features">
+                    <li><i class="fa-solid fa-check"></i> Documentos ilimitados</li>
+                    <li><i class="fa-solid fa-check"></i> Firma desde cualquier celular</li>
+                    <li><i class="fa-solid fa-check"></i> Audit trail legal completo</li>
+                    <li><i class="fa-solid fa-check"></i> Link por WhatsApp o Mail</li>
+                    <li><i class="fa-solid fa-check"></i> Panel web de gestión</li>
+                    <li><i class="fa-solid fa-check"></i> Soporte por WhatsApp</li>
+                </ul>
+                <a href="https://wa.me/5492612404479?text=Hola%20Mati,%20me%20interesa%20el%20plan%20Starter" target="_blank" class="btn-plan">Solicitar Demo Gratis</a>
+            </div>
+
+            <div class="pricing-card featured">
+                <div class="popular-badge">⭐ Más elegido</div>
+                <div class="pricing-header">
+                    <span class="plan-icon"><i class="fa-solid fa-gem"></i></span>
+                    <h3>Profesional</h3>
+                    <p class="plan-desc">Para estudios que quieren imagen premium</p>
+                </div>
+                <div class="pricing-price">
+                    <span class="price-amount">$180</span>
+                    <span class="price-period">USD / mes</span>
+                </div>
+                <ul class="pricing-features">
+                    <li><i class="fa-solid fa-check"></i> Todo lo del plan Starter</li>
+                    <li><i class="fa-solid fa-check"></i> Logo personalizado en panel</li>
+                    <li><i class="fa-solid fa-check"></i> Colores corporativos</li>
+                    <li><i class="fa-solid fa-check"></i> Soporte prioritario</li>
+                    <li><i class="fa-solid fa-check"></i> Multi-usuario (próximamente)</li>
+                    <li><i class="fa-solid fa-check"></i> Onboarding personalizado</li>
+                </ul>
+                <a href="https://wa.me/5492612404479?text=Hola%20Mati,%20me%20interesa%20el%20plan%20Profesional" target="_blank" class="btn-plan btn-plan-featured">Solicitar Demo Gratis</a>
+            </div>
+        </div>
+        <p class="pricing-note"><i class="fa-solid fa-shield-halved"></i> Sin contratos anuales. Sin cargos ocultos. Cancelá cuando quieras.</p>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="faq-section">
+        <div class="section-header">
+            <h2>Preguntas frecuentes</h2>
+            <p>Todo lo que necesitás saber antes de dar el salto digital.</p>
+        </div>
+        <div class="faq-container">
+            <div class="faq-item">
+                <button class="faq-question" onclick="toggleFaq(this)">
+                    <span><i class="fa-solid fa-scale-balanced"></i> ¿Es legal la firma electrónica en Argentina?</span>
+                    <i class="fa-solid fa-chevron-down faq-arrow"></i>
+                </button>
+                <div class="faq-answer">
+                    <p>Sí. El Art. 5 de la Ley 25.506 reconoce la firma electrónica como un instrumento válido. Es importante aclarar que FirmaExpress utiliza <strong>firma electrónica</strong> (no firma digital con PKI), lo que significa que si la otra parte impugnara la firma, nuestro rastro de auditoría —con IP, fecha, hora y geolocalización— es la evidencia que respalda la autoría. Para la operativa diaria de un estudio (honorarios, autorizaciones, convenios), su nivel de protección es más que suficiente.</p>
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-question" onclick="toggleFaq(this)">
+                    <span><i class="fa-solid fa-mobile-screen"></i> ¿Mi cliente necesita instalar alguna app?</span>
+                    <i class="fa-solid fa-chevron-down faq-arrow"></i>
+                </button>
+                <div class="faq-answer">
+                    <p>No. Tu cliente firma directamente desde el navegador de su celular. Cero apps, cero registros, cero complicaciones. Si sabe usar WhatsApp, sabe usar FirmaExpress.</p>
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-question" onclick="toggleFaq(this)">
+                    <span><i class="fa-solid fa-file-pdf"></i> ¿Funciona con cualquier documento?</span>
+                    <i class="fa-solid fa-chevron-down faq-arrow"></i>
+                </button>
+                <div class="faq-answer">
+                    <p>Sí. Cualquier archivo PDF: contratos, balances, autorizaciones, consentimientos informados, convenios de honorarios, poderes, y mucho más.</p>
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-question" onclick="toggleFaq(this)">
+                    <span><i class="fa-solid fa-credit-card"></i> ¿Puedo cancelar cuando quiera?</span>
+                    <i class="fa-solid fa-chevron-down faq-arrow"></i>
+                </button>
+                <div class="faq-answer">
+                    <p>Sí. No hay contratos anuales ni penalidades. Pagás mes a mes y si en algún momento querés pausar, simplemente nos avisás. Sin letra chica.</p>
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-question" onclick="toggleFaq(this)">
+                    <span><i class="fa-solid fa-lock"></i> ¿Los documentos están seguros?</span>
+                    <i class="fa-solid fa-chevron-down faq-arrow"></i>
+                </button>
+                <div class="faq-answer">
+                    <p>Más seguros que en papel. Usamos Firebase de Google con encriptación de nivel empresarial. Cada documento firmado queda almacenado con su rastro de auditoría completo: IP, timestamp y datos de sesión. Si alguien intentara negar su firma, ese registro es la prueba que te protege.</p>
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-question" onclick="toggleFaq(this)">
+                    <span><i class="fa-solid fa-gavel"></i> ¿Sirve para presentar en tribunales?</span>
+                    <i class="fa-solid fa-chevron-down faq-arrow"></i>
+                </button>
+                <div class="faq-answer">
+                    <p>Para escritos judiciales se usa el Token oficial del Poder Judicial. Pero para la relación estudio-cliente (honorarios, convenios, autorizaciones, conformidades), FirmaExpress es la solución definitiva. Cubre el 95% de la operativa diaria de un estudio.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-final">
+        <div class="cta-box">
+            <h2>¿Listo para modernizar tu estudio?</h2>
+            <p>Sumate a los profesionales que ya están ahorrando horas de trabajo cada semana.</p>
+            <a href="https://wa.me/5492612404479" class="btn-primary-lg">Hablar con Matías ahora</a>
+        </div>
+    </section>
 
     <footer>
         <div class="footer-content">
-            <p class="credits">Diseñado y Desarrollado en su totalidad por <strong>Matías Gómez</strong></p>
-            <div class="contact-info" style="display: flex; gap: 15px; justify-content: center; margin-top: 10px;">
-                <a href="https://wa.me/5492612404479" target="_blank" class="contact-item" style="color: var(--text-secondary); text-decoration: none;">
-                    <i class="fa-brands fa-whatsapp"></i> +54 9 2612404479
-                </a>
-                <a href="mailto:ftvmati2022@gmail.com" class="contact-item" style="color: var(--text-secondary); text-decoration: none;">
-                    <i class="fa-solid fa-envelope"></i> ftvmati2022@gmail.com
-                </a>
+            <div class="footer-logo">
+                <i class="fa-solid fa-file-signature"></i>
+                <span>FirmaExpress Pro</span>
+            </div>
+            <p>Desarrollado por Matías Gómez - Mendoza, Argentina</p>
+            <div class="footer-links">
+                <a href="mailto:ftvmati2022@gmail.com">Contacto</a>
+                <a href="login.html">Acceso Clientes</a>
             </div>
         </div>
     </footer>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
-    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
-    
-    <script src="app.js" defer></script>
+    <a href="https://wa.me/5492612404479" class="whatsapp-float" target="_blank">
+        <i class="fa-brands fa-whatsapp"></i>
+    </a>
 </body>
+<script>
+// Calculadora de Ahorro
+function calcular() {
+    const firmas = parseInt(document.getElementById('sliderFirmas').value);
+    const tiempo = parseInt(document.getElementById('sliderTiempo').value);
+    const hora = parseInt(document.getElementById('sliderHora').value);
+    
+    document.getElementById('valFirmas').textContent = firmas;
+    document.getElementById('valTiempo').textContent = tiempo;
+    document.getElementById('valHora').textContent = hora;
+    
+    const horasPerdidas = Math.round((firmas * tiempo) / 60 * 10) / 10;
+    const costoOportunidad = Math.round(horasPerdidas * hora);
+    const hojas = firmas * 3;
+    const ahorro = Math.max(0, costoOportunidad - 100);
+    
+    document.getElementById('resHoras').textContent = horasPerdidas;
+    document.getElementById('resCosto').textContent = costoOportunidad.toLocaleString();
+    document.getElementById('resPapel').textContent = hojas;
+    document.getElementById('compSin').textContent = '$' + costoOportunidad.toLocaleString() + '/mes';
+    document.getElementById('compAhorro').textContent = '$' + ahorro.toLocaleString() + ' USD';
+}
+
+document.getElementById('sliderFirmas').addEventListener('input', calcular);
+document.getElementById('sliderTiempo').addEventListener('input', calcular);
+document.getElementById('sliderHora').addEventListener('input', calcular);
+calcular();
+
+// FAQ Accordion
+function toggleFaq(btn) {
+    const item = btn.parentElement;
+    const isOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item.open').forEach(el => el.classList.remove('open'));
+    if (!isOpen) item.classList.add('open');
+}
+
+// Smooth scroll nav
+document.querySelectorAll('.nav-links a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+        e.preventDefault();
+        document.querySelector(a.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
+    });
+});
+</script>
 </html>
