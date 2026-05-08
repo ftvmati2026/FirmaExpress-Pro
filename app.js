@@ -22,6 +22,10 @@ const db = firebase.firestore();
 const auth = firebase.auth();
 const SUPER_ADMIN_EMAIL = "matias@firmaexpress.com";
 
+if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+}
+
 let currentTenantId = null;
 let isSuperAdmin = false;
 let listenerEmpresas = null;
@@ -467,11 +471,11 @@ function arrayBufferToDataUrl(buffer, mimeType) {
 
 function isLikelySignedPdf(file, buffer) {
     const fileName = file?.name || '';
-    if (/(^|[_\-\s])firmado(\.pdf|[_\-\s]|$)/i.test(fileName)) return true;
+    if (/firmad[oa]/i.test(fileName)) return true;
 
-    const sampleBytes = new Uint8Array(buffer).subarray(0, 2000000);
+    const sampleBytes = new Uint8Array(buffer).subarray(0, 5000000);
     const sampleText = new TextDecoder('latin1').decode(sampleBytes);
-    return /FirmaExpress Pro|CONSTANCIA DE FIRMA|Documento firmado con FirmaExpress/i.test(sampleText);
+    return /FirmaExpress Pro|CONSTANCIA DE FIRMA|Documento firmado con FirmaExpress|\/Creator\s*\([^)]*FirmaExpress|\/Producer\s*\([^)]*FirmaExpress|Firmante:\s*/i.test(sampleText);
 }
 
 function cargarAuditoriasDeEmpresa() {
@@ -703,7 +707,8 @@ window.descargarPDF = async function(id) {
         }
 
         const existingPdfBytes = await fetch(data.pdfBase64).then(res => res.arrayBuffer());
-        const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
+        const pageTextBoxes = await getPdfTextBoxes(existingPdfBytes.slice(0));
+        const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes.slice(0));
         const fontBold = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
         const fontNormal = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
         const pages = pdfDoc.getPages();
@@ -713,7 +718,9 @@ window.descargarPDF = async function(id) {
         const signatureImage = firmaTransparente ? await pdfDoc.embedPng(firmaTransparente) : null;
 
         if (modoFirma === 'todas_las_hojas') {
-            pages.forEach((page) => drawSignatureBlock(page, signatureImage, fontBold, fontNormal, data));
+            pages.forEach((page, index) => {
+                drawSignatureBlock(page, signatureImage, fontBold, fontNormal, data, pageTextBoxes[index] || []);
+            });
         } else if (modoFirma === 'hoja_nueva') {
             const legalPage = pdfDoc.addPage(PDFLib.PageSizes.A4);
             legalPage.drawText('CONSTANCIA DE FIRMA ELECTRÓNICA', {
@@ -728,9 +735,9 @@ window.descargarPDF = async function(id) {
                 size: 9,
                 font: fontNormal
             });
-            drawSignatureBlock(legalPage, signatureImage, fontBold, fontNormal, data);
+            drawSignatureBlock(legalPage, signatureImage, fontBold, fontNormal, data, []);
         } else {
-            drawSignatureBlock(pages[pages.length - 1], signatureImage, fontBold, fontNormal, data);
+            drawSignatureBlock(pages[pages.length - 1], signatureImage, fontBold, fontNormal, data, pageTextBoxes[pages.length - 1] || []);
         }
 
         const baseName = (data.nombreArchivo || 'documento.pdf').replace(/\.pdf$/i, '').replace(/_FIRMADO$/i, '');
@@ -755,11 +762,13 @@ window.descargarPDF = async function(id) {
     }
 };
 
-function drawSignatureBlock(page, signatureImage, fontBold, fontNormal, data) {
-    const signatureWidth = 160;
-    const signatureHeight = 80;
-    const { x, y } = getSignatureCoordinates(page, data.posicionFirma, signatureWidth, signatureHeight);
+function drawSignatureBlock(page, signatureImage, fontBold, fontNormal, data, textBoxes = []) {
+    const placement = getSmartSignaturePlacement(page, data.posicionFirma, textBoxes);
+    const { x, y, signatureWidth, signatureHeight, scale } = placement;
     const fechaFirma = formatDateTime(toDate(data.fechaFirma) || new Date());
+    const boldSize = 9 * scale;
+    const normalSize = 8 * scale;
+    const lineGap = 11 * scale;
 
     if (signatureImage) {
         page.drawImage(signatureImage, {
@@ -770,25 +779,144 @@ function drawSignatureBlock(page, signatureImage, fontBold, fontNormal, data) {
         });
     }
 
-    const textY = Math.max(32, y - 14);
+    const textY = Math.max(24, y - (14 * scale));
     page.drawText(`Firmante: ${safePdfText(data.afiliadoNombre || 'N/A')}`, {
         x,
         y: textY,
-        size: 9,
+        size: boldSize,
         font: fontBold
     });
     page.drawText(`DNI: ${safePdfText(data.afiliadoDNI || '---')}`, {
         x,
-        y: textY - 11,
-        size: 8,
+        y: textY - lineGap,
+        size: normalSize,
         font: fontNormal
     });
     page.drawText(`Fecha: ${safePdfText(fechaFirma)}`, {
         x,
-        y: textY - 22,
-        size: 8,
+        y: textY - (lineGap * 2),
+        size: normalSize,
         font: fontNormal
     });
+}
+
+async function getPdfTextBoxes(buffer) {
+    if (!window.pdfjsLib) return [];
+
+    try {
+        const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(buffer) });
+        const pdf = await loadingTask.promise;
+        const pages = [];
+
+        for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+            const page = await pdf.getPage(pageNumber);
+            const textContent = await page.getTextContent();
+            pages.push(textContent.items
+                .filter(item => item.str && item.str.trim())
+                .map((item) => {
+                    const x = item.transform[4];
+                    const y = item.transform[5];
+                    const width = Math.max(1, item.width || 0);
+                    const height = Math.max(6, item.height || Math.abs(item.transform[3]) || 8);
+                    return {
+                        x: x - 2,
+                        y: y - 3,
+                        width: width + 4,
+                        height: height + 6
+                    };
+                }));
+        }
+
+        return pages;
+    } catch (error) {
+        console.warn('No se pudo analizar el texto del PDF para ubicar la firma.', error);
+        return [];
+    }
+}
+
+function getSmartSignaturePlacement(page, position, textBoxes) {
+    const baseWidth = 160;
+    const baseHeight = 80;
+    const scales = [1, 0.9, 0.8, 0.7, 0.6];
+    let bestPlacement = null;
+
+    for (const scale of scales) {
+        const signatureWidth = baseWidth * scale;
+        const signatureHeight = baseHeight * scale;
+        const candidates = getSignatureCandidates(page, position, signatureWidth, signatureHeight, scale);
+
+        for (const candidate of candidates) {
+            const score = getPlacementOverlapScore(getSignatureBlockRect(candidate.x, candidate.y, signatureWidth, signatureHeight, scale), textBoxes);
+            const placement = { ...candidate, signatureWidth, signatureHeight, scale, score };
+            if (score === 0) return placement;
+            if (!bestPlacement || score < bestPlacement.score) bestPlacement = placement;
+        }
+    }
+
+    return bestPlacement || {
+        ...getSignatureCoordinates(page, position, baseWidth, baseHeight),
+        signatureWidth: baseWidth,
+        signatureHeight: baseHeight,
+        scale: 1
+    };
+}
+
+function getSignatureCandidates(page, position, signatureWidth, signatureHeight, scale) {
+    const { width, height } = page.getSize();
+    const blockHeight = signatureHeight + (42 * scale);
+    const normalizedPosition = position || 'abajo_derecha';
+    const [, horizontal = 'derecha'] = normalizedPosition.split('_');
+    const vertical = normalizedPosition.startsWith('centro') ? 'centro' : normalizedPosition.split('_')[0];
+    const base = getSignatureCoordinates(page, position, signatureWidth, signatureHeight);
+    const minX = 20;
+    const maxX = Math.max(minX, width - signatureWidth - 20);
+    const minImageY = Math.max(42 * scale, 18);
+    const maxImageY = Math.max(minImageY, height - blockHeight - 20 + (42 * scale));
+    const xOffsets = horizontal === 'centro' ? [0, -40, 40, -80, 80] : [0, -35, 35, -70, 70];
+    const yOffsets = vertical === 'abajo'
+        ? [0, -18, 18, -36, 36, 54, 72, 90, 108, 126]
+        : [0, -24, 24, -48, 48, -72, 72, -96, 96];
+    const seen = new Set();
+    const candidates = [];
+
+    for (const yOffset of yOffsets) {
+        for (const xOffset of xOffsets) {
+            const x = clamp(base.x + xOffset, minX, maxX);
+            const y = clamp(base.y + yOffset, minImageY, maxImageY);
+            const key = `${Math.round(x)}:${Math.round(y)}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            candidates.push({ x, y });
+        }
+    }
+
+    return candidates;
+}
+
+function getSignatureBlockRect(x, y, signatureWidth, signatureHeight, scale) {
+    return {
+        x,
+        y: y - (36 * scale),
+        width: signatureWidth,
+        height: signatureHeight + (36 * scale)
+    };
+}
+
+function getPlacementOverlapScore(rect, textBoxes) {
+    return textBoxes.reduce((score, box) => score + getOverlapArea(rect, box), 0);
+}
+
+function getOverlapArea(a, b) {
+    const left = Math.max(a.x, b.x);
+    const right = Math.min(a.x + a.width, b.x + b.width);
+    const bottom = Math.max(a.y, b.y);
+    const top = Math.min(a.y + a.height, b.y + b.height);
+    if (right <= left || top <= bottom) return 0;
+    return (right - left) * (top - bottom);
+}
+
+function clamp(value, min, max) {
+    return Math.min(Math.max(value, min), max);
 }
 
 async function makeSignatureBackgroundTransparent(dataUrl) {

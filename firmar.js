@@ -56,6 +56,8 @@ if (!docId) {
                 loadingMessage.style.display = 'none';
                 successSection.style.display = 'block';
                 successSection.innerHTML = '<i class="fa-solid fa-circle-check" style="font-size: 4rem; color: var(--success-color); margin-bottom: 1rem;"></i><h2>Este documento ya fue firmado</h2><p class="subtitle">No es necesario volver a firmarlo.</p>';
+            } else if (isLikelySignedDocument(data)) {
+                loadingMessage.innerHTML = '<i class="fa-solid fa-triangle-exclamation fa-3x" style="color: var(--danger-color);"></i><p style="margin-top:1rem; color:var(--text-primary);">Este PDF parece ser un documento ya firmado. Pedile a quien lo envio que suba el PDF original sin firma.</p>';
             } else {
                 // Si está pendiente, renderizar en canvas (para móviles)
                 renderizarPDFenMovil(data.pdfBase64);
@@ -69,6 +71,18 @@ if (!docId) {
 }
 
 // ---- Función Mágica para Celulares y Validación 2 en 1 ----
+function isLikelySignedDocument(data) {
+    if (/firmad[oa]/i.test(data?.nombreArchivo || '')) return true;
+
+    try {
+        const base64 = (data?.pdfBase64 || '').split(',')[1] || '';
+        const sample = atob(base64.slice(0, 700000));
+        return /FirmaExpress Pro|CONSTANCIA DE FIRMA|Documento firmado con FirmaExpress|\/Creator\s*\([^)]*FirmaExpress|\/Producer\s*\([^)]*FirmaExpress|Firmante:\s*/i.test(sample);
+    } catch (error) {
+        return false;
+    }
+}
+
 async function renderizarPDFenMovil(base64Data) {
     try {
         const base64Mudo = base64Data.split(',')[1];
