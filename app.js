@@ -410,7 +410,14 @@ if (uploadForm) {
             btnUpload.disabled = true;
             btnUpload.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Subiendo...';
 
-            const base64PDF = await fileToBase64(file);
+            const pdfBytes = await fileToArrayBuffer(file);
+            if (isLikelySignedPdf(file, pdfBytes)) {
+                alert("Este archivo parece ser un PDF ya firmado. Para evitar que se mezclen firmas de otra empresa o de otro trámite, subí siempre el PDF original sin firma.");
+                btnUpload.disabled = false;
+                return;
+            }
+
+            const base64PDF = arrayBufferToDataUrl(pdfBytes, file.type || 'application/pdf');
 
             await db.collection('auditorias').add({
                 tenantId: currentTenantId,
@@ -432,19 +439,39 @@ if (uploadForm) {
         } catch (error) {
             console.error(error);
             alert('Error al subir el archivo: ' + friendlyFirebaseError(error));
+            btnUpload.disabled = false;
         } finally {
             btnUpload.innerHTML = '<i class="fa-solid fa-link"></i> Generar Link para Cliente';
         }
     });
 }
 
-function fileToBase64(file) {
+function fileToArrayBuffer(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.readAsDataURL(file);
+        reader.readAsArrayBuffer(file);
         reader.onload = () => resolve(reader.result);
         reader.onerror = error => reject(error);
     });
+}
+
+function arrayBufferToDataUrl(buffer, mimeType) {
+    const bytes = new Uint8Array(buffer);
+    const chunkSize = 0x8000;
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+    }
+    return `data:${mimeType};base64,${btoa(binary)}`;
+}
+
+function isLikelySignedPdf(file, buffer) {
+    const fileName = file?.name || '';
+    if (/(^|[_\-\s])firmado(\.pdf|[_\-\s]|$)/i.test(fileName)) return true;
+
+    const sampleBytes = new Uint8Array(buffer).subarray(0, 2000000);
+    const sampleText = new TextDecoder('latin1').decode(sampleBytes);
+    return /FirmaExpress Pro|CONSTANCIA DE FIRMA|Documento firmado con FirmaExpress/i.test(sampleText);
 }
 
 function cargarAuditoriasDeEmpresa() {
@@ -670,6 +697,11 @@ window.descargarPDF = async function(id) {
         }
 
         const data = docSnapshot.data();
+        if (currentTenantId && data.tenantId !== currentTenantId) {
+            alert("Este documento pertenece a otra empresa. Volvé a entrar a la empresa correcta y descargalo desde su historial.");
+            return;
+        }
+
         const existingPdfBytes = await fetch(data.pdfBase64).then(res => res.arrayBuffer());
         const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
         const fontBold = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
@@ -701,11 +733,18 @@ window.descargarPDF = async function(id) {
             drawSignatureBlock(pages[pages.length - 1], signatureImage, fontBold, fontNormal, data);
         }
 
+        const baseName = (data.nombreArchivo || 'documento.pdf').replace(/\.pdf$/i, '').replace(/_FIRMADO$/i, '');
+        pdfDoc.setTitle(`${baseName}_FIRMADO.pdf`);
+        pdfDoc.setAuthor(safePdfText(data.afiliadoNombre || 'Firmante'));
+        pdfDoc.setSubject('Documento firmado con FirmaExpress Pro');
+        pdfDoc.setKeywords(['FirmaExpress Pro', 'Documento firmado']);
+        pdfDoc.setCreator('FirmaExpress Pro');
+        pdfDoc.setProducer('FirmaExpress Pro');
+
         const pdfBytes = await pdfDoc.save();
         const blob = new Blob([pdfBytes], { type: 'application/pdf' });
         const link = document.createElement('a');
         const objectUrl = URL.createObjectURL(blob);
-        const baseName = (data.nombreArchivo || 'documento.pdf').replace(/\.pdf$/i, '');
         link.href = objectUrl;
         link.download = `${baseName}_FIRMADO.pdf`;
         link.click();
