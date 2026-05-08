@@ -40,8 +40,7 @@ window.onresize = resizeCanvas;
 setTimeout(resizeCanvas, 100);
 
 const signaturePad = new SignaturePad(canvas, {
-    penColor: "rgb(0, 0, 150)", // Tinta azul
-    backgroundColor: "rgb(255, 255, 255)"
+    penColor: "rgb(0, 0, 150)" // Tinta azul sobre fondo transparente
 });
 
 // Configurar PDF.js

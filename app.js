@@ -677,7 +677,8 @@ window.descargarPDF = async function(id) {
         const pages = pdfDoc.getPages();
         const modoFirma = data.modoFirma || 'misma_hoja';
         const base64Firma = data.firmaBase64;
-        const signatureImage = base64Firma ? await pdfDoc.embedPng(base64Firma) : null;
+        const firmaTransparente = base64Firma ? await makeSignatureBackgroundTransparent(base64Firma) : null;
+        const signatureImage = firmaTransparente ? await pdfDoc.embedPng(firmaTransparente) : null;
 
         if (modoFirma === 'todas_las_hojas') {
             pages.forEach((page) => drawSignatureBlock(page, signatureImage, fontBold, fontNormal, data));
@@ -748,6 +749,37 @@ function drawSignatureBlock(page, signatureImage, fontBold, fontNormal, data) {
         y: textY - 22,
         size: 8,
         font: fontNormal
+    });
+}
+
+async function makeSignatureBackgroundTransparent(dataUrl) {
+    return new Promise((resolve) => {
+        const image = new Image();
+        image.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = image.naturalWidth || image.width;
+            canvas.height = image.naturalHeight || image.height;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(image, 0, 0);
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const pixels = imageData.data;
+            for (let i = 0; i < pixels.length; i += 4) {
+                const red = pixels[i];
+                const green = pixels[i + 1];
+                const blue = pixels[i + 2];
+                const alpha = pixels[i + 3];
+                if (alpha > 0 && red > 245 && green > 245 && blue > 245) {
+                    pixels[i + 3] = 0;
+                }
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+            resolve(canvas.toDataURL('image/png'));
+        };
+        image.onerror = () => resolve(dataUrl);
+        image.src = dataUrl;
     });
 }
 
