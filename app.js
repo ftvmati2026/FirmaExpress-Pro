@@ -382,6 +382,11 @@ if (pdfInput) {
     pdfInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
+            if (isSignedFileName(file.name)) {
+                rejectSelectedPdf("Este archivo parece ser un PDF ya firmado. Subí el PDF original sin firma.");
+                return;
+            }
+
             fileNameDisplay.textContent = file.name;
             fileNameDisplay.style.color = 'var(--primary-color)';
             fileNameDisplay.style.fontWeight = 'bold';
@@ -415,9 +420,13 @@ if (uploadForm) {
             btnUpload.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Subiendo...';
 
             const pdfBytes = await fileToArrayBuffer(file);
+            const signedReason = await getSignedPdfReason(file, pdfBytes);
+            if (signedReason) {
+                rejectSelectedPdf(`Este archivo parece ser un PDF ya firmado (${signedReason}). Para evitar que se mezclen firmas de otra empresa o de otro tramite, subi siempre el PDF original sin firma.`);
+                return;
+            }
             if (isLikelySignedPdf(file, pdfBytes)) {
-                alert("Este archivo parece ser un PDF ya firmado. Para evitar que se mezclen firmas de otra empresa o de otro trámite, subí siempre el PDF original sin firma.");
-                btnUpload.disabled = false;
+                rejectSelectedPdf("Este archivo parece ser un PDF ya firmado. Subí siempre el PDF original sin firma.");
                 return;
             }
 
@@ -450,6 +459,20 @@ if (uploadForm) {
     });
 }
 
+function rejectSelectedPdf(message) {
+    alert(message);
+    if (pdfInput) pdfInput.value = '';
+    if (fileNameDisplay) {
+        fileNameDisplay.textContent = 'Seleccionar PDF';
+        fileNameDisplay.style.color = '';
+        fileNameDisplay.style.fontWeight = '';
+    }
+    if (btnUpload) {
+        btnUpload.disabled = true;
+        btnUpload.innerHTML = '<i class="fa-solid fa-link"></i> Generar Link para Cliente';
+    }
+}
+
 function fileToArrayBuffer(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -469,13 +492,55 @@ function arrayBufferToDataUrl(buffer, mimeType) {
     return `data:${mimeType};base64,${btoa(binary)}`;
 }
 
-function isLikelySignedPdf(file, buffer) {
-    const fileName = file?.name || '';
-    if (/firmad[oa]/i.test(fileName)) return true;
+async function getSignedPdfReason(file, buffer) {
+    if (isSignedFileName(file?.name || '')) return 'el nombre contiene FIRMADO';
+    if (hasRawSignatureMarker(buffer)) return 'contiene una marca de FirmaExpress';
 
+    const pdfText = await extractPdfText(buffer);
+    if (hasSignatureStampText(pdfText)) return 'contiene una constancia de firma';
+
+    return '';
+}
+
+function isSignedFileName(fileName) {
+    return /(^|[._\-\s])firmad[oa]([._\-\s]|\.pdf$|$)/i.test(fileName || '');
+}
+
+function hasRawSignatureMarker(buffer) {
     const sampleBytes = new Uint8Array(buffer).subarray(0, 5000000);
     const sampleText = new TextDecoder('latin1').decode(sampleBytes);
-    return /FirmaExpress Pro|CONSTANCIA DE FIRMA|Documento firmado con FirmaExpress|\/Creator\s*\([^)]*FirmaExpress|\/Producer\s*\([^)]*FirmaExpress|Firmante:\s*/i.test(sampleText);
+    return hasSignatureStampText(sampleText);
+}
+
+async function extractPdfText(buffer) {
+    if (!window.pdfjsLib) return '';
+
+    try {
+        const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(buffer.slice(0)) });
+        const pdf = await loadingTask.promise;
+        const parts = [];
+
+        for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+            const page = await pdf.getPage(pageNumber);
+            const textContent = await page.getTextContent();
+            parts.push(textContent.items.map(item => item.str || '').join(' '));
+        }
+
+        return parts.join(' ');
+    } catch (error) {
+        console.warn('No se pudo leer el texto del PDF para validar si ya estaba firmado.', error);
+        return '';
+    }
+}
+
+function hasSignatureStampText(text) {
+    const normalized = String(text || '').replace(/\s+/g, ' ');
+    if (/FirmaExpress Pro|CONSTANCIA DE FIRMA|Documento firmado con FirmaExpress/i.test(normalized)) return true;
+    return /Firmante\s*:/i.test(normalized) && /DNI\s*:/i.test(normalized) && /Fecha\s*:/i.test(normalized);
+}
+
+function isLikelySignedPdf(file, buffer) {
+    return isSignedFileName(file?.name || '') || hasRawSignatureMarker(buffer);
 }
 
 function cargarAuditoriasDeEmpresa() {
@@ -707,7 +772,7 @@ window.descargarPDF = async function(id) {
         }
 
         const existingPdfBytes = await fetch(data.pdfBase64).then(res => res.arrayBuffer());
-        const pageTextBoxes = await getPdfTextBoxes(existingPdfBytes.slice(0));
+        const pageAnalyses = await analyzePdfPages(existingPdfBytes.slice(0));
         const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes.slice(0));
         const fontBold = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
         const fontNormal = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
@@ -719,7 +784,7 @@ window.descargarPDF = async function(id) {
 
         if (modoFirma === 'todas_las_hojas') {
             pages.forEach((page, index) => {
-                drawSignatureBlock(page, signatureImage, fontBold, fontNormal, data, pageTextBoxes[index] || []);
+                drawSignatureBlock(page, signatureImage, fontBold, fontNormal, data, pageAnalyses[index] || null);
             });
         } else if (modoFirma === 'hoja_nueva') {
             const legalPage = pdfDoc.addPage(PDFLib.PageSizes.A4);
@@ -737,7 +802,7 @@ window.descargarPDF = async function(id) {
             });
             drawSignatureBlock(legalPage, signatureImage, fontBold, fontNormal, data, []);
         } else {
-            drawSignatureBlock(pages[pages.length - 1], signatureImage, fontBold, fontNormal, data, pageTextBoxes[pages.length - 1] || []);
+            drawSignatureBlock(pages[pages.length - 1], signatureImage, fontBold, fontNormal, data, pageAnalyses[pages.length - 1] || null);
         }
 
         const baseName = (data.nombreArchivo || 'documento.pdf').replace(/\.pdf$/i, '').replace(/_FIRMADO$/i, '');
@@ -762,8 +827,8 @@ window.descargarPDF = async function(id) {
     }
 };
 
-function drawSignatureBlock(page, signatureImage, fontBold, fontNormal, data, textBoxes = []) {
-    const placement = getSmartSignaturePlacement(page, data.posicionFirma, textBoxes);
+function drawSignatureBlock(page, signatureImage, fontBold, fontNormal, data, pageAnalysis = null) {
+    const placement = getSmartSignaturePlacement(page, data.posicionFirma, pageAnalysis);
     const { x, y, signatureWidth, signatureHeight, scale } = placement;
     const fechaFirma = formatDateTime(toDate(data.fechaFirma) || new Date());
     const boldSize = 9 * scale;
@@ -800,7 +865,7 @@ function drawSignatureBlock(page, signatureImage, fontBold, fontNormal, data, te
     });
 }
 
-async function getPdfTextBoxes(buffer) {
+async function analyzePdfPages(buffer) {
     if (!window.pdfjsLib) return [];
 
     try {
@@ -810,21 +875,40 @@ async function getPdfTextBoxes(buffer) {
 
         for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
             const page = await pdf.getPage(pageNumber);
+            const viewport = page.getViewport({ scale: 1 });
+            const renderScale = 0.75;
+            const renderViewport = page.getViewport({ scale: renderScale });
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.ceil(renderViewport.width);
+            canvas.height = Math.ceil(renderViewport.height);
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            await page.render({ canvasContext: ctx, viewport: renderViewport }).promise;
+
             const textContent = await page.getTextContent();
-            pages.push(textContent.items
+            const textBoxes = textContent.items
                 .filter(item => item.str && item.str.trim())
                 .map((item) => {
-                    const x = item.transform[4];
-                    const y = item.transform[5];
-                    const width = Math.max(1, item.width || 0);
-                    const height = Math.max(6, item.height || Math.abs(item.transform[3]) || 8);
+                    const transformed = pdfjsLib.Util.transform(viewport.transform, item.transform);
+                    const fontHeight = Math.max(6, Math.abs(transformed[3]) || item.height || 8);
+                    const x = transformed[4];
+                    const y = viewport.height - transformed[5];
+                    const width = Math.max(1, item.width || Math.abs(transformed[0]) || 0);
+                    const height = fontHeight;
                     return {
-                        x: x - 2,
-                        y: y - 3,
-                        width: width + 4,
-                        height: height + 6
+                        x: x - 4,
+                        y: y - 6,
+                        width: width + 8,
+                        height: height + 12
                     };
-                }));
+                });
+
+            pages.push({
+                width: viewport.width,
+                height: viewport.height,
+                renderScale,
+                imageData: ctx.getImageData(0, 0, canvas.width, canvas.height),
+                textBoxes
+            });
         }
 
         return pages;
@@ -834,10 +918,10 @@ async function getPdfTextBoxes(buffer) {
     }
 }
 
-function getSmartSignaturePlacement(page, position, textBoxes) {
+function getSmartSignaturePlacement(page, position, pageAnalysis) {
     const baseWidth = 160;
     const baseHeight = 80;
-    const scales = [1, 0.9, 0.8, 0.7, 0.6];
+    const scales = [1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.45];
     let bestPlacement = null;
 
     for (const scale of scales) {
@@ -846,9 +930,9 @@ function getSmartSignaturePlacement(page, position, textBoxes) {
         const candidates = getSignatureCandidates(page, position, signatureWidth, signatureHeight, scale);
 
         for (const candidate of candidates) {
-            const score = getPlacementOverlapScore(getSignatureBlockRect(candidate.x, candidate.y, signatureWidth, signatureHeight, scale), textBoxes);
+            const rect = getSignatureBlockRect(candidate.x, candidate.y, signatureWidth, signatureHeight, scale);
+            const score = getPlacementOverlapScore(rect, pageAnalysis) + candidate.distancePenalty;
             const placement = { ...candidate, signatureWidth, signatureHeight, scale, score };
-            if (score === 0) return placement;
             if (!bestPlacement || score < bestPlacement.score) bestPlacement = placement;
         }
     }
@@ -868,42 +952,136 @@ function getSignatureCandidates(page, position, signatureWidth, signatureHeight,
     const [, horizontal = 'derecha'] = normalizedPosition.split('_');
     const vertical = normalizedPosition.startsWith('centro') ? 'centro' : normalizedPosition.split('_')[0];
     const base = getSignatureCoordinates(page, position, signatureWidth, signatureHeight);
-    const minX = 20;
-    const maxX = Math.max(minX, width - signatureWidth - 20);
-    const minImageY = Math.max(42 * scale, 18);
-    const maxImageY = Math.max(minImageY, height - blockHeight - 20 + (42 * scale));
-    const xOffsets = horizontal === 'centro' ? [0, -40, 40, -80, 80] : [0, -35, 35, -70, 70];
-    const yOffsets = vertical === 'abajo'
-        ? [0, -18, 18, -36, 36, 54, 72, 90, 108, 126]
-        : [0, -24, 24, -48, 48, -72, 72, -96, 96];
+    const minBlockY = 16;
+    const minX = getHorizontalRange(horizontal, width, signatureWidth).min;
+    const maxX = getHorizontalRange(horizontal, width, signatureWidth).max;
+    const yRange = getVerticalRange(vertical, height, blockHeight, scale);
+    const minImageY = yRange.min + (36 * scale);
+    const maxImageY = yRange.max + (36 * scale);
     const seen = new Set();
     const candidates = [];
+    const stepX = 18;
+    const stepY = 12;
 
-    for (const yOffset of yOffsets) {
-        for (const xOffset of xOffsets) {
-            const x = clamp(base.x + xOffset, minX, maxX);
-            const y = clamp(base.y + yOffset, minImageY, maxImageY);
-            const key = `${Math.round(x)}:${Math.round(y)}`;
+    for (let y = minImageY; y <= maxImageY; y += stepY) {
+        for (let x = minX; x <= maxX; x += stepX) {
+            const clampedX = clamp(x, minX, maxX);
+            const clampedY = clamp(y, minBlockY + (36 * scale), maxImageY);
+            const key = `${Math.round(clampedX)}:${Math.round(clampedY)}`;
             if (seen.has(key)) continue;
             seen.add(key);
-            candidates.push({ x, y });
+            candidates.push({
+                x: clampedX,
+                y: clampedY,
+                distancePenalty: getPlacementDistancePenalty(base.x, base.y, clampedX, clampedY, scale)
+            });
         }
     }
 
-    return candidates;
+    for (const point of [
+        { x: base.x, y: base.y },
+        { x: base.x, y: minImageY },
+        { x: base.x, y: maxImageY },
+        { x: minX, y: base.y },
+        { x: maxX, y: base.y }
+    ]) {
+        const x = clamp(point.x, minX, maxX);
+        const y = clamp(point.y, minImageY, maxImageY);
+        const key = `${Math.round(x)}:${Math.round(y)}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        candidates.push({
+            x,
+            y,
+            distancePenalty: getPlacementDistancePenalty(base.x, base.y, x, y, scale)
+        });
+    }
+
+    return candidates.sort((a, b) => a.distancePenalty - b.distancePenalty);
+}
+
+function getHorizontalRange(horizontal, pageWidth, signatureWidth) {
+    const margin = 20;
+    const maxX = Math.max(margin, pageWidth - signatureWidth - margin);
+    if (horizontal === 'izquierda') {
+        return { min: margin, max: Math.max(margin, Math.min(maxX, pageWidth * 0.45)) };
+    }
+    if (horizontal === 'centro') {
+        return {
+            min: Math.max(margin, (pageWidth - signatureWidth) * 0.25),
+            max: Math.min(maxX, (pageWidth - signatureWidth) * 0.75)
+        };
+    }
+    return { min: Math.max(margin, pageWidth * 0.52), max: maxX };
+}
+
+function getVerticalRange(vertical, pageHeight, blockHeight, scale) {
+    const margin = 16;
+    const maxBlockY = Math.max(margin, pageHeight - blockHeight - margin);
+    if (vertical === 'arriba') {
+        return { min: Math.max(margin, pageHeight * 0.55), max: maxBlockY };
+    }
+    if (vertical === 'centro') {
+        return {
+            min: Math.max(margin, pageHeight * 0.22),
+            max: Math.min(maxBlockY, pageHeight * 0.78)
+        };
+    }
+    return { min: margin, max: Math.min(maxBlockY, pageHeight * 0.45) };
+}
+
+function getPlacementDistancePenalty(baseX, baseY, x, y, scale) {
+    const distance = Math.hypot(baseX - x, baseY - y);
+    return distance * 0.05 + (1 - scale) * 3;
 }
 
 function getSignatureBlockRect(x, y, signatureWidth, signatureHeight, scale) {
+    const padding = 5;
     return {
-        x,
-        y: y - (36 * scale),
-        width: signatureWidth,
-        height: signatureHeight + (36 * scale)
+        x: x - padding,
+        y: y - (36 * scale) - padding,
+        width: signatureWidth + (padding * 2),
+        height: signatureHeight + (36 * scale) + (padding * 2)
     };
 }
 
-function getPlacementOverlapScore(rect, textBoxes) {
-    return textBoxes.reduce((score, box) => score + getOverlapArea(rect, box), 0);
+function getPlacementOverlapScore(rect, pageAnalysis) {
+    if (!pageAnalysis) return 0;
+
+    const textBoxes = pageAnalysis.textBoxes || [];
+    const textScore = textBoxes.reduce((score, box) => score + getOverlapArea(rect, box), 0);
+    const pixelScore = getRenderedContentScore(rect, pageAnalysis);
+    return (textScore * 20) + pixelScore;
+}
+
+function getRenderedContentScore(rect, pageAnalysis) {
+    const imageData = pageAnalysis?.imageData;
+    if (!imageData) return 0;
+
+    const scale = pageAnalysis.renderScale || 1;
+    const pageHeight = pageAnalysis.height || (imageData.height / scale);
+    const x0 = clamp(Math.floor(rect.x * scale), 0, imageData.width - 1);
+    const x1 = clamp(Math.ceil((rect.x + rect.width) * scale), 0, imageData.width);
+    const y0 = clamp(Math.floor((pageHeight - rect.y - rect.height) * scale), 0, imageData.height - 1);
+    const y1 = clamp(Math.ceil((pageHeight - rect.y) * scale), 0, imageData.height);
+    const pixels = imageData.data;
+    let contentPixels = 0;
+    const step = 2;
+
+    for (let y = y0; y < y1; y += step) {
+        for (let x = x0; x < x1; x += step) {
+            const index = ((y * imageData.width) + x) * 4;
+            const red = pixels[index];
+            const green = pixels[index + 1];
+            const blue = pixels[index + 2];
+            const alpha = pixels[index + 3];
+            if (alpha > 10 && (red < 248 || green < 248 || blue < 248)) {
+                contentPixels++;
+            }
+        }
+    }
+
+    return contentPixels;
 }
 
 function getOverlapArea(a, b) {

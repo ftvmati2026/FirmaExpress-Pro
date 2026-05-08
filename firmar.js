@@ -49,14 +49,14 @@ if (!docId) {
     loadingMessage.innerHTML = '<i class="fa-solid fa-triangle-exclamation fa-3x" style="color: var(--danger-color);"></i><p style="margin-top:1rem; color:var(--text-primary);">Error: Documento no encontrado. Link inválido.</p>';
 } else {
     // Buscar y Cargar documento desde la base de datos secreta
-    db.collection('auditorias').doc(docId).get().then((doc) => {
+    db.collection('auditorias').doc(docId).get().then(async (doc) => {
         if (doc.exists) {
             const data = doc.data();
             if (data.estado === 'Firmado') {
                 loadingMessage.style.display = 'none';
                 successSection.style.display = 'block';
                 successSection.innerHTML = '<i class="fa-solid fa-circle-check" style="font-size: 4rem; color: var(--success-color); margin-bottom: 1rem;"></i><h2>Este documento ya fue firmado</h2><p class="subtitle">No es necesario volver a firmarlo.</p>';
-            } else if (isLikelySignedDocument(data)) {
+            } else if (await isLikelySignedDocument(data)) {
                 loadingMessage.innerHTML = '<i class="fa-solid fa-triangle-exclamation fa-3x" style="color: var(--danger-color);"></i><p style="margin-top:1rem; color:var(--text-primary);">Este PDF parece ser un documento ya firmado. Pedile a quien lo envio que suba el PDF original sin firma.</p>';
             } else {
                 // Si está pendiente, renderizar en canvas (para móviles)
@@ -71,16 +71,53 @@ if (!docId) {
 }
 
 // ---- Función Mágica para Celulares y Validación 2 en 1 ----
-function isLikelySignedDocument(data) {
-    if (/firmad[oa]/i.test(data?.nombreArchivo || '')) return true;
+async function isLikelySignedDocument(data) {
+    if (isSignedFileName(data?.nombreArchivo || '')) return true;
 
     try {
         const base64 = (data?.pdfBase64 || '').split(',')[1] || '';
-        const sample = atob(base64.slice(0, 700000));
-        return /FirmaExpress Pro|CONSTANCIA DE FIRMA|Documento firmado con FirmaExpress|\/Creator\s*\([^)]*FirmaExpress|\/Producer\s*\([^)]*FirmaExpress|Firmante:\s*/i.test(sample);
+        const sample = atob(base64.slice(0, 900000));
+        if (hasSignatureStampText(sample)) return true;
+
+        const bytes = base64ToUint8Array(base64);
+        const pdfText = await extractPdfText(bytes);
+        return hasSignatureStampText(pdfText);
     } catch (error) {
         return false;
     }
+}
+
+function isSignedFileName(fileName) {
+    return /(^|[._\-\s])firmad[oa]([._\-\s]|\.pdf$|$)/i.test(fileName || '');
+}
+
+function hasSignatureStampText(text) {
+    const normalized = String(text || '').replace(/\s+/g, ' ');
+    if (/FirmaExpress Pro|CONSTANCIA DE FIRMA|Documento firmado con FirmaExpress/i.test(normalized)) return true;
+    return /Firmante\s*:/i.test(normalized) && /DNI\s*:/i.test(normalized) && /Fecha\s*:/i.test(normalized);
+}
+
+function base64ToUint8Array(base64) {
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes;
+}
+
+async function extractPdfText(bytes) {
+    const loadingTask = pdfjsLib.getDocument({ data: bytes });
+    const pdf = await loadingTask.promise;
+    const parts = [];
+
+    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+        const page = await pdf.getPage(pageNumber);
+        const textContent = await page.getTextContent();
+        parts.push(textContent.items.map(item => item.str || '').join(' '));
+    }
+
+    return parts.join(' ');
 }
 
 async function renderizarPDFenMovil(base64Data) {
