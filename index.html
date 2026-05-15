@@ -1,15 +1,156 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FirmaExpress Pro - Redireccionando...</title>
-    <script>
-        // Redirigir a app.html o login.html según el estado
-        window.location.href = "app.html";
-    </script>
+    <title>FirmaExpress Pro - Firmas electrónicas sin traslados</title>
+    <meta name="description" content="Tus clientes firman PDFs desde un link de WhatsApp, sin imprimir, escanear, descargar apps ni moverse de su casa.">
+    <link rel="stylesheet" href="landing.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    Redireccionando...
+    <nav class="site-nav">
+        <a href="#inicio" class="brand">
+            <i class="fa-solid fa-file-signature"></i>
+            <span>FirmaExpress Pro</span>
+        </a>
+        <div class="nav-actions">
+            <button class="theme-toggle" id="themeToggle" type="button" aria-label="Cambiar tema">
+                <i class="fa-solid fa-sun"></i>
+            </button>
+            <a href="login.html" class="btn btn-ghost">Iniciar sesión</a>
+            <a href="https://wa.me/5492612404479?text=Hola%20Mati,%20quiero%20contratar%20FirmaExpress%20Pro" target="_blank" class="btn btn-primary">Contratar</a>
+        </div>
+    </nav>
+
+    <main id="inicio">
+        <section class="hero">
+            <div class="hero-copy">
+                <span class="legal-pill"><i class="fa-solid fa-scale-balanced"></i> Firma electrónica válida - Art. 5, Ley 25.506</span>
+                <h1>Que tus clientes firmen sin imprimir, sin escanear y sin ir hasta tu oficina.</h1>
+                <p class="hero-lead">FirmaExpress Pro reemplaza el circuito lento de "te mando el PDF, imprimilo, firmalo, sacale foto y reenviámelo" por un link de WhatsApp que se firma en menos de 1 minuto.</p>
+                <div class="hero-actions">
+                    <a href="https://wa.me/5492612404479?text=Hola%20Mati,%20quiero%20ver%20una%20demo%20de%20FirmaExpress%20Pro" target="_blank" class="btn btn-primary btn-large">
+                        <i class="fa-brands fa-whatsapp"></i> Pedir demo por WhatsApp
+                    </a>
+                    <a href="#pasos" class="btn btn-outline btn-large">Ver los 3 pasos</a>
+                </div>
+                <div class="metrics-strip" aria-label="Indicadores principales">
+                    <div><strong>30<small>seg</small></strong><span>tiempo promedio</span></div>
+                    <div><strong>0<small>apps</small></strong><span>instalaciones</span></div>
+                    <div><strong>100<small>%</small></strong><span>Art. 5, Ley 25.506</span></div>
+                </div>
+            </div>
+
+            <div class="hero-visual" aria-label="Vista previa de firma electrónica">
+                <img src="hero_landing.png" alt="FirmaExpress Pro funcionando en un celular">
+                <div class="status-card status-card-top">
+                    <i class="fa-solid fa-link"></i>
+                    <span>Link enviado por WhatsApp</span>
+                </div>
+                <div class="status-card status-card-bottom">
+                    <i class="fa-solid fa-check"></i>
+                    <span>Documento firmado y auditado</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="pain-solution" aria-label="Problema y solución">
+            <div class="pain-block">
+                <h2>La falsa "firma digital" que hoy hace perder tiempo</h2>
+                <ul>
+                    <li><i class="fa-solid fa-xmark"></i> Descargar el PDF</li>
+                    <li><i class="fa-solid fa-xmark"></i> Imprimirlo</li>
+                    <li><i class="fa-solid fa-xmark"></i> Firmar a mano</li>
+                    <li><i class="fa-solid fa-xmark"></i> Sacar una foto o escanear</li>
+                    <li><i class="fa-solid fa-xmark"></i> Reenviar algo que muchas veces sale movido o ilegible</li>
+                </ul>
+            </div>
+            <div class="solution-block">
+                <h2>Lo que tu cliente hace con FirmaExpress</h2>
+                <ol id="pasos">
+                    <li><span>1</span> Abre el link que recibe por WhatsApp</li>
+                    <li><span>2</span> Firma con el dedo en la pantalla</li>
+                    <li><span>3</span> Envía el documento firmado</li>
+                </ol>
+                <p>Sin traslados, sin pedir permiso en el trabajo, sin impresora, sin scanner y sin depender de que una foto salga bien.</p>
+            </div>
+        </section>
+
+        <section class="who-section">
+            <div class="section-copy">
+                <span class="eyebrow">Para entidades que necesitan avanzar trámites</span>
+                <h2>Indispensable para estudios, escribanías, escuelas y empresas.</h2>
+                <p>Cuando el documento vuelve firmado al panel, tu equipo puede seguir el trámite sin perseguir clientes ni coordinar horarios para una firma presencial.</p>
+            </div>
+            <div class="use-cases">
+                <div><i class="fa-solid fa-scale-balanced"></i><span>Estudios jurídicos</span></div>
+                <div><i class="fa-solid fa-pen-nib"></i><span>Escribanías</span></div>
+                <div><i class="fa-solid fa-calculator"></i><span>Estudios contables</span></div>
+                <div><i class="fa-solid fa-school"></i><span>Escuelas</span></div>
+                <div><i class="fa-solid fa-hospital"></i><span>Clínicas</span></div>
+                <div><i class="fa-solid fa-building"></i><span>Empresas</span></div>
+            </div>
+        </section>
+
+        <section class="trust-section">
+            <div class="trust-card">
+                <i class="fa-solid fa-shield-halved"></i>
+                <h3>Respaldo legal claro</h3>
+                <p>FirmaExpress Pro trabaja con firma electrónica reconocida por el Art. 5 de la Ley 25.506.</p>
+            </div>
+            <div class="trust-card">
+                <i class="fa-solid fa-fingerprint"></i>
+                <h3>Rastro de auditoría</h3>
+                <p>El sistema registra fecha, hora, firmante y datos técnicos como IP cuando el navegador lo permite.</p>
+            </div>
+            <div class="trust-card">
+                <i class="fa-solid fa-display"></i>
+                <h3>Cualquier dispositivo</h3>
+                <p>El cliente puede firmar desde celular, tablet o computadora, sin instalar aplicaciones.</p>
+            </div>
+        </section>
+
+        <section class="final-cta">
+            <div>
+                <span class="eyebrow">Menos fricción, más documentos firmados</span>
+                <h2>Convertí cada firma pendiente en un link que se resuelve en minutos.</h2>
+            </div>
+            <a href="https://wa.me/5492612404479?text=Hola%20Mati,%20quiero%20contratar%20FirmaExpress%20Pro" target="_blank" class="btn btn-primary btn-large">Hablar con Matías</a>
+        </section>
+    </main>
+
+    <a href="https://wa.me/5492612404479?text=Hola%20Mati,%20quiero%20contratar%20FirmaExpress%20Pro" class="whatsapp-float" target="_blank" aria-label="WhatsApp">
+        <i class="fa-brands fa-whatsapp"></i>
+    </a>
+
+    <script>
+        const html = document.documentElement;
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('landing-theme') || 'dark';
+
+        function setTheme(theme) {
+            html.setAttribute('data-theme', theme);
+            localStorage.setItem('landing-theme', theme);
+            themeToggle.innerHTML = theme === 'dark'
+                ? '<i class="fa-solid fa-sun"></i>'
+                : '<i class="fa-solid fa-moon"></i>';
+        }
+
+        setTheme(savedTheme);
+        themeToggle.addEventListener('click', () => {
+            setTheme(html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+        });
+
+        document.querySelectorAll('a[href^="#"]').forEach((link) => {
+            link.addEventListener('click', (event) => {
+                const target = document.querySelector(link.getAttribute('href'));
+                if (!target) return;
+                event.preventDefault();
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        });
+    </script>
 </body>
 </html>

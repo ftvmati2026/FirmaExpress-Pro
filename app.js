@@ -630,7 +630,7 @@ function cargarHistorialDeEmpresa(tenantUid) {
             docs.sort((a, b) => getTime(b.fechaFirma) - getTime(a.fechaFirma));
 
             if (docs.length === 0) {
-                historyList.innerHTML = `<tr><td colspan="4">No hay documentos firmados todavía.</td></tr>`;
+                historyList.innerHTML = `<tr><td colspan="5">No hay documentos firmados todavía.</td></tr>`;
                 ultimoPDFId = null;
                 if (btnDownloadHeader) btnDownloadHeader.style.display = 'none';
                 if (btnVaciarHistorial) btnVaciarHistorial.style.display = 'none';
@@ -649,6 +649,11 @@ function cargarHistorialDeEmpresa(tenantUid) {
                     <td><strong>${escapeHtml(data.nombreArchivo || 'Documento')}</strong></td>
                     <td>${escapeHtml(formatDateTime(fechaFirma))}</td>
                     <td><span class="badge badge-signed">${escapeHtml(data.afiliadoNombre || 'Firmante')}</span></td>
+                    <td>
+                        <button class="icon-btn" title="Ver auditoría" onclick="verAuditoria('${data.id}')" style="color: var(--primary-color);">
+                            <i class="fa-solid fa-fingerprint"></i>
+                        </button>
+                    </td>
                     <td class="td-actions">
                         <button class="icon-btn" title="Descargar" onclick="descargarPDF('${data.id}')" style="color: var(--success-color);">
                             <i class="fa-solid fa-download"></i>
@@ -662,7 +667,7 @@ function cargarHistorialDeEmpresa(tenantUid) {
             });
         }, (error) => {
             console.error(error);
-            historyList.innerHTML = `<tr><td colspan="4">Error al cargar historial.</td></tr>`;
+            historyList.innerHTML = `<tr><td colspan="5">Error al cargar historial.</td></tr>`;
         });
 }
 
@@ -701,6 +706,37 @@ window.eliminarAuditoria = async function(id) {
     } catch (error) {
         console.error(error);
         alert("No se pudo eliminar el documento.");
+    }
+};
+
+window.verAuditoria = async function(id) {
+    try {
+        const docSnapshot = await db.collection('auditorias').doc(id).get();
+        if (!docSnapshot.exists) {
+            alert("El documento ya no existe.");
+            return;
+        }
+
+        const data = docSnapshot.data();
+        if (currentTenantId && data.tenantId !== currentTenantId) {
+            alert("Este documento pertenece a otra empresa.");
+            return;
+        }
+
+        const fechaFirma = formatDateTime(toDate(data.fechaFirma));
+        const detalle = [
+            `Firmante: ${data.afiliadoNombre || 'No registrado'}`,
+            `DNI: ${data.afiliadoDNI || 'No registrado'}`,
+            `Fecha y hora: ${fechaFirma}`,
+            `IP: ${data.ipFirma || 'No registrada'}`,
+            `Dispositivo: ${data.plataformaFirma || 'No registrado'}`,
+            `Navegador: ${data.userAgentFirma || 'No registrado'}`
+        ].join('\n');
+
+        alert(`Auditoría del documento\n\n${detalle}`);
+    } catch (error) {
+        console.error(error);
+        alert("No se pudo cargar la auditoría.");
     }
 };
 

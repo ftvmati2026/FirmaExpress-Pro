@@ -226,6 +226,7 @@ btnSubmit.addEventListener('click', async () => {
         
         // Guardamos la firma como imagen invisible (Base64)
         const firmaDataUrl = signaturePad.toDataURL("image/png");
+        const ipFirma = await obtenerIpPublica();
         
         // Configuramos los datos a modificar
         await db.collection('auditorias').doc(docId).update({
@@ -234,6 +235,9 @@ btnSubmit.addEventListener('click', async () => {
             afiliadoNombre: document.getElementById('afiliadoNombre').value.trim(),
             afiliadoDNI: document.getElementById('afiliadoDNI').value.trim(),
             conformidad: true,
+            ipFirma,
+            userAgentFirma: navigator.userAgent || 'No disponible',
+            plataformaFirma: navigator.platform || 'No disponible',
             fechaFirma: firebase.firestore.FieldValue.serverTimestamp()
         });
         
@@ -248,3 +252,23 @@ btnSubmit.addEventListener('click', async () => {
         btnClear.disabled = false;
     }
 });
+
+async function obtenerIpPublica() {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+    try {
+        const response = await fetch('https://api.ipify.org?format=json', {
+            cache: 'no-store',
+            signal: controller.signal
+        });
+        if (!response.ok) throw new Error('IP no disponible');
+        const data = await response.json();
+        return data.ip || 'No disponible';
+    } catch (error) {
+        console.warn('No se pudo obtener la IP publica.', error);
+        return 'No disponible';
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}

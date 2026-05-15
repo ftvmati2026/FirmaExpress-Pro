@@ -39,6 +39,24 @@
             border-color: var(--primary-color);
             box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
+        .signup-hint {
+            margin-top: 18px;
+            padding: 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: rgba(37, 99, 235, 0.06);
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.45;
+        }
+        .signup-hint a {
+            color: var(--primary-color);
+            font-weight: 700;
+            text-decoration: none;
+        }
+        .signup-hint a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -63,6 +81,10 @@
                 </button>
                 <div id="loginError" style="color: var(--danger-color); display: none; margin-top: 10px; font-size: 0.9rem;"></div>
             </form>
+            <p class="signup-hint">
+                Si aún no tenés una cuenta, podés obtenerla contratando el servicio
+                <a href="https://wa.me/5492612404479?text=Hola%20Mati,%20quiero%20contratar%20FirmaExpress%20Pro" target="_blank">aquí</a>.
+            </p>
         </div>
     </main>
 
